@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Intro -->
+<section class="hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-3">
+        <span class="dot"></span> Bioprofiler
+      </div>
+      <p>
+        This module builds bioprofiles for chemicals and provides descriptors using PubChem bioactivity data, after filling experimental gaps.
+        You can upload up to <strong>500</strong> chemicals (by PubChem CID). Assays with at least one active compound are
+        selected; mutual information identifies 35 informative assays; then Random Forest models
+        (trained on up to 500 actives and 500 inactives per informative assay) impute missing values.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Upload form -->
+<section class="py-5">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <form id="bioprofile-upload-form"
+            action="{{ url_for('toxpro.assayProfile') }}"
+            method="post"
+            enctype="multipart/form-data"
+            onsubmit="return validateCIDFile(event)">
+
+        <input type="hidden" id="session-id" name="session_id" value="{{ session_id }}">
+
+        <p>
+          Upload a file containing PubChem CIDs (one per line) to profile by <strong>bioactivity data</strong>.
+          Accepted formats: <code>.txt</code> or <code>.csv</code>, single column. If you have other identifiers
+          (e.g., SMILES), use PubChem’s batch converter:
+          <a href="https://pubchem.ncbi.nlm.nih.gov/idexchange/idexchange.cgi"
+             class="btn btn-outline-secondary btn-sm ml-1"
+             target="_blank" rel="noopener">ID Exchange</a>
+        </p>
+
+        <!-- Sample download buttons -->
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          <a href="{{ url_for('toxpro.sample', format='csv') }}" class="btn btn-sample btn-sample-csv">
+            Download Sample CSV
+          </a>
+          <a href="{{ url_for('toxpro.sample', format='txt') }}" class="btn btn-sample btn-sample-txt">
+            Download Sample TXT
+          </a>
+        </div>
+
+        <div class="form-group">
+          <label class="mb-1 font-weight-600">
+            Upload Dataset File <span class="text-muted">(Formats: .txt, .csv; max 500 CIDs)</span>
+          </label>
+          <input type="file" name="dataset-file" id="dataset-file"
+                 accept=".txt,.csv" class="form-control" required>
+          <small id="cid-file-help" class="form-text text-muted">
+            File must be a single column of CIDs. Empty lines are ignored.
+          </small>
+          <div id="cid-file-feedback" class="mt-2" aria-live="polite"></div>
+        </div>
+
+        <!-- Info notice -->
+        <div class="alert alert-info mt-3" style="font-size: 0.9rem;">
+          <strong>After submission, you will be redirected to a page with your Job ID.</strong>
+          It may take 20 minutes on average to complete. The link will be accessible for 24 hours from submission and can be bookmarked.
+        </div>
+
+        <div class="text-center mt-4">
+          <button type="submit" class="btn btn-build">
+            Build Bioprofile
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  function validateCIDFile(e) {
+    const form = document.getElementById('bioprofile-upload-form');
+    const input = document.getElementById('dataset-file');
+    const feedback = document.getElementById('cid-file-feedback');
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    feedback.className = '';
+    feedback.textContent = '';
+
+    if (!input.files || !input.files[0]) {
+      feedback.className = 'text-danger';
+      feedback.textContent = 'Please choose a .txt or .csv file.';
+      e.preventDefault();
+      return false;
+    }
+
+    const file = input.files[0];
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (ext !== 'txt' && ext !== 'csv') {
+      feedback.className = 'text-danger';
+      feedback.textContent = 'Invalid file type. Upload a .txt or .csv file.';
+      e.preventDefault();
+      return false;
+    }
+
+    e.preventDefault();
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const text = evt.target.result || '';
+      const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const count = lines.length;
+
+      if (count === 0) {
+        feedback.className = 'text-danger';
+        feedback.textContent = 'The file appears to be empty.';
+        return false;
+      }
+      if (count > 500) {
+        feedback.className = 'text-danger';
+        feedback.textContent = `Too many CIDs: ${count}. Please limit to 500 or fewer.`;
+        return false;
+      }
+
+      feedback.className = 'text-success';
+      feedback.textContent = `File OK: ${count} CID${count===1?'':'s'} detected. Submitting…`;
+
+      if (typeof showLoader === 'function') showLoader();
+      if (submitBtn) submitBtn.disabled = true;
+      form.submit();
+    };
+    reader.onerror = function() {
+      feedback.className = 'text-danger';
+      feedback.textContent = 'Could not read the file. Please try again.';
+    };
+    reader.readAsText(file);
+
+    return false;
+  }
+</script>
+
+{% endblock %}

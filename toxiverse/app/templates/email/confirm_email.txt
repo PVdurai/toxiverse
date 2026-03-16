@@ -1,0 +1,11 @@
+Dear {{ user.username }},
+
+Click here to confirm your email:
+
+{{ url_for('auth.confirm_email', token=token, _external=True) }}
+
+If you have not requested a password reset simply ignore this message.
+
+Sincerely,
+
+ToxiVerse

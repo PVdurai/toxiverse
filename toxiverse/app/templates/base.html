@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Meta -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>ToxiVerse</title>
+
+  <!-- Favicon -->
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 4 -->
+  <link
+    rel="stylesheet"
+    href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css"
+    integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4"
+    crossorigin="anonymous"
+  >
+
+  <!-- Plugins CSS -->
+  <link href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css" rel="stylesheet">
+  <link href="https://cdn.rawgit.com/harvesthq/chosen/gh-pages/chosen.min.css" rel="stylesheet" />
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ciipro.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- Font Awesome -->
+  <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/solid.js" crossorigin="anonymous"></script>
+  <script defer src="https://use.fontawesome.com/releases/v5.0.13/js/fontawesome.js" crossorigin="anonymous"></script>
+
+  <!-- Expose script root -->
+  <script type="text/javascript">
+    window.$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+  </script>
+
+  <!-- Core JS libs -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://d3js.org/d3.v4.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.rawgit.com/harvesthq/chosen/gh-pages/chosen.jquery.min.js"></script>
+  <script src="https://kit.fontawesome.com/c404ad7411.js" crossorigin="anonymous"></script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/jsme/jsme.nocache.js') }}"></script>
+
+  <!-- Flash messages reset -->
+  <style>
+    .flashes { list-style:none; padding-left:0; margin-bottom:0; }
+
+    /* Cookie Consent Banner */
+    .cookie-consent {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 20px;
+      z-index: 9999;
+      display: none;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    }
+    .cookie-consent.show {
+      display: block;
+    }
+    .cookie-consent-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .cookie-consent-text {
+      flex: 1;
+      min-width: 300px;
+    }
+    .cookie-consent-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .cookie-btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    .cookie-btn-accept {
+      background: #5BC0BE;
+      color: white;
+    }
+    .cookie-btn-accept:hover {
+      background: #4aa9a7;
+    }
+    .cookie-btn-decline {
+      background: #6c757d;
+      color: white;
+    }
+    .cookie-btn-decline:hover {
+      background: #5a6268;
+    }
+  </style>
+</head>
+
+<body class="{% block body_class %}{% endblock %}">
+  <div class="wrapper">
+    <!-- Page Content -->
+    <div id="content">
+      <!-- Top Navbar -->
+      <nav class="navbar navbar-expand-lg navbar-light bg-white">
+        <div class="container-fluid">
+          <a class="navbar-brand d-flex align-items-center pi-text-color" href="/">
+            <span style="width:12px;height:12px;border-radius:3px;display:inline-block;background:linear-gradient(135deg,#5BC0BE,#5B7FFF);box-shadow:0 0 0 3px rgba(0,0,0,.05);" class="mr-2"></span>
+            ToxiVerse
+          </a>
+
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
+                  aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <div class="collapse navbar-collapse justify-content-end" id="navbarNavDropdown">
+            <ul class="navbar-nav align-items-center">
+              <li class="nav-item">
+                <a class="nav-link pi-alink-color" href="/"><i class="fas fa-home"></i> Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link pi-alink-color" href="{{ url_for('toxpro.assayProfile') }}">
+                  <i class="fa-solid fa-flask-vial"></i> Bioprofiler
+                </a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle pi-alink-color" href="#" id="databaseDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa-solid fa-database"></i> Database
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="databaseDropdown">
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('toxpro.toxdata') }}">Toxicity Datasets</a></li>
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('toxpro.sourceData') }}">Resources</a></li>
+                </ul>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle pi-alink-color" href="#" id="cheminformaticsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa-solid fa-hexagon-nodes"></i> Cheminformatics
+                </a>
+                <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="cheminformaticsDropdown">
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('toxpro.datasets') }}">Upload or Retrieve Dataset</a></li>
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('cheminf.curator') }}">Curator</a></li>
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('cheminf.PCA') }}">Chemical Space Visualization</a></li>
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('cheminf.QSAR_build') }}">QSAR Builder</a></li>
+                  <li><a class="dropdown-item pi-dropdown-item" href="{{ url_for('cheminf.QSAR_predict') }}">QSAR Predictor</a></li>
+                </ul>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link pi-alink-color" href="{{ url_for('toxpro.tutorial') }}">
+                  <i class="fa-solid fa-book-open-reader"></i> Tutorial
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link pi-alink-color" href="{{ url_for('toxpro.tasks') }}">
+                  <i class="fas fa-tasks"></i> Tasks
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link pi-alink-color" href="{{ url_for('toxpro.about') }}">
+                  <i class="fa-solid fa-circle-info"></i> About
+                </a>
+              </li>
+              {% if not current_user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link pi-alink-color" href="{{ url_for('auth.login') }}">
+                  <i class="fa-solid fa-right-from-bracket"></i> Login
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Alerts -->
+      <div class="container pt-3">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for category, message in messages %}
+                <li class="mb-2">
+                  <div class="alert alert-{{ 'warning' if category=='message' else category }} shadow-sm mb-0" role="alert">
+                    {{ message }}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- Main content slot -->
+      <main class="pb-5">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <!-- Loader overlay -->
+    <div class="pi-loader-backdrop">
+      <div class="pi-loader-container">
+        <div class="pi-dots-grid">
+          <div class="pi-dot"></div>
+          <div class="pi-dot"></div>
+          <div class="pi-dot"></div>
+          <div class="pi-dot"></div>
+        </div>
+        <div class="pi-loader-text">Please Wait, It may take several minutes...</div>
+      </div>
+    </div>
+
+    <!-- Cookie Consent Banner -->
+    <div class="cookie-consent" id="cookieConsent">
+      <div class="cookie-consent-content">
+        <div class="cookie-consent-text">
+          <strong>Cookie Notice</strong><br>
+          This website uses essential cookies to ensure proper functionality and to maintain your session.
+          We do not use tracking or analytics cookies. By continuing to use this site, you consent to our use of cookies.
+        </div>
+        <div class="cookie-consent-buttons">
+          <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()">Ok</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS + Popper -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" crossorigin="anonymous"></script>
+
+  <!-- App JS -->
+  <script src="{{ url_for('static', filename='js/toxpro.js') }}"></script>
+
+  <script>
+    // Sidebar toggle (if you keep a sidebar elsewhere)
+    $(function(){
+      $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+      });
+    });
+
+    // Loader control
+    function isLoaderDisabledPage() {
+      const path = window.location.pathname.toLowerCase();
+      return path === '/cheminf/qsar-build' || path === '/cheminf/qsar-predict';
+    }
+    function showLoader() {
+      if (isLoaderDisabledPage()) return;
+      document.querySelector('.pi-loader-backdrop')?.classList.add('active');
+      document.querySelector('.pi-loader-container')?.classList.add('active');
+    }
+    function hideLoader() {
+      document.querySelector('.pi-loader-backdrop')?.classList.remove('active');
+      document.querySelector('.pi-loader-container')?.classList.remove('active');
+    }
+    document.addEventListener('submit', function(e){
+      const form = e.target;
+      if (form.matches('form[data-loader="on"]')) showLoader();
+    }, true);
+
+    // Cookie Consent Functions
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    function setCookie(name, value, days) {
+      const date = new Date();
+      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+      document.cookie = `${name}=${value};expires=${date.toUTCString()};path=/;SameSite=Strict`;
+    }
+    function acceptCookies() {
+      setCookie('cookieConsent', 'accepted', 365);
+      document.getElementById('cookieConsent').classList.remove('show');
+    }
+    function declineCookies() {
+      setCookie('cookieConsent', 'declined', 365);
+      document.getElementById('cookieConsent').classList.remove('show');
+      alert('Note: Declining cookies may affect some functionality of the website.');
+    }
+    // Show cookie banner if not already consented
+    window.addEventListener('load', function() {
+      if (!getCookie('cookieConsent')) {
+        document.getElementById('cookieConsent').classList.add('show');
+      }
+    });
+  </script>
+</body>
+</html>

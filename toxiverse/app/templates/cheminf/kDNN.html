@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <div class="row">
+          <div class="col-12">
+            <div class="card shadow p-3 mb-5 bg-white rounded" id="dataset-card">
+              <div class="card-body">
+                  <h3>Endocrine Disruptors Prediction (Experimental)</h3>
+                  <p class="card-text">In this tab, you can use the previously built k-DNN model to make predictions on a set chemicals to decide whether a compound is an endocrine disruptor.</p>
+
+              </div>
+            </div>
+          </div>
+    </div>
+
+    <form action="{{ url_for('cheminf.KDNN_predict') }}" method="post" enctype="multipart/form-data">
+    <div class="row">
+          <div class="col-6">
+            <div class="card shadow p-3 mb-5 bg-white rounded" id="dataset-card">
+                <div class="form-check">
+                    <input type="radio" class="form-check-input" name="input-selection" value="manual">
+                    <label class="form-check-label" for="checkManual"><h3>Draw chemicals here</h3></label>
+                </div>
+                <center><div id="jsme_container"></div></center>
+                <br>
+                <center>
+                <input type="submit" style="color: white;"
+                         class="btn btn-info"
+                         value="Add SMILES" onclick="getSmiles()">
+                </center>
+                <br>
+                <TEXTAREA id="jme_output" name="smiles-input" ROWS=2 COLS=40></TEXTAREA>
+                <br>
+                <center>
+                <input type="submit" style="color: white;"
+                         class="btn btn-info"
+                         value="Predict" onclick="loading()">
+                </center>
+
+            </div>
+          </div>
+
+          <div class="col-6">
+              <div class="card shadow p-3 mb-5 bg-white rounded" id="dataset-card">
+              <div class="form-check">
+                    <input type="radio" class="form-check-input" name="input-selection" value="upload" checked>
+                    <label class="form-check-label" for="checkUpload"><h3>Or upload files here</h3></label>
+                    <br>
+                    <input type="file" class="form-control" name="predict-file">
+                    <br>
+                    <br>
+                    <label class="form-control" for="identifier">Put in column contains identifier</label>
+                    <br>
+                    <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm", name="identifier-column">
+                    <br>
+                    <br>
+                    <label class="form-control" for="identifier">Put in column contains actual class</label>
+                    <br>
+                    <input type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm", name="class-column">
+                </div>
+          <br>
+          <br>
+              <center>
+                  <input type="submit" style="color: white;"
+                         class="btn btn-info"
+                         value="Predict" onclick="loading()">
+              </center>
+              </div>
+              </div>
+    </div>
+    </form>
+
+
+    <div class="row">
+    {% if user.has_kdnn_prediction %}
+        <div class="col-12" style="overflow: auto">
+
+
+            <div class="card shadow p-3 mb-5 bg-white rounded">
+              <div class="card-body">
+                <div class="form-group">
+                <form action="{{ url_for('cheminf.download_predictions') }}" method="post" enctype="multipart/form-data">
+                  <label for="bioprofile-selection">Select dataset to view prediction results:</label>
+                  <select class="form-control" id="prediction-selection" name="prediction-selection">
+                      {% for kdnn_prediction in user_kdnn_predictions %}
+                          <option value="{{ kdnn_prediction.name }}"> {{ kdnn_prediction.name }}</option>
+                      {% endfor %}
+                  </select>
+
+                  <h3>Pathway</h3>
+                  <p>This is the table of compounds of predicted activity and pathway</p>
+                  <table id="kdnn-prediction-table" class="table">
+                    <thead>
+                      <tr>
+                        <th>Identifier</th>
+                        <th>Layer 1</th>
+                        <th>Layer 2</th>
+                        <th>Layer 3</th>
+                        <th>Layer 4</th>
+                        <th>Layer 5</th>
+                        <th>Probability</th>
+                        <th>Predicted Class</th>
+                        <th>Actual Class</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                  </table>
+
+
+                  <input type="submit" style="color: white;"
+                         name="action"
+                         class="btn btn-success btn-padding"
+                         value="Download Results">
+                </form>
+
+                </div>
+              </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    {% endif %}
+
+
+
+
+    <script>
+    //this function will be called after the JavaScriptApplet code has been loaded.
+        function jsmeOnLoad() {
+            jsmeApplet = new JSApplet.JSME("jsme_container", "600px", "400px");
+        }
+
+    //Get SMILES from the molecule
+        function getSmiles() {
+            var data = jsmeApplet.smiles();
+            document.getElementById("jme_output").value += data;
+            document.getElementById("jme_output").value += ',';
+        }
+
+    //Update results
+        $(document).ready(function () {
+                    $('#kdnn-prediction-table').DataTable({
+                    paging: true,
+                    searching: true,
+                    serverSide: false,
+                    order: [[5, 'desc']],
+                    ajax: {
+                        "url": '/api/get_kdnn_predictions',
+                        data: function(d) {
+                        d.predictionSelection = getPredictionSelection();},
+                    },
+                    columns: [
+                        {data: 'Identifier'},
+                        {data: 'Layer 1 Max Nodes'},
+                        {data: 'Layer 2 Max Nodes'},
+                        {data: 'Layer 3 Max Nodes'},
+                        {data: 'Layer 4 Max Nodes'},
+                        {data: 'Layer 5 Max Nodes'},
+                        {data: 'Probability'},
+                        {data: 'Predicted Class'},
+                        {data: 'Actual Class'},
+                ],
+            });
+        });
+
+
+        $(`#prediction-selection`).change(function () {
+            $('#kdnn-prediction-table').dataTable().fnClearTable();
+            $('#kdnn-prediction-table').DataTable({
+                    destroy: true,
+                    paging: true,
+                    searching: true,
+                    serverSide: false,
+                    order: [[5, 'desc']],
+                    ajax: {
+                        "url": '/api/get_kdnn_predictions',
+                        data: function(d) {
+                        d.predictionSelection = getPredictionSelection();},
+                    },
+                    columns: [
+                        {data: 'Identifier'},
+                        {data: 'Layer 1 Max Nodes'},
+                        {data: 'Layer 2 Max Nodes'},
+                        {data: 'Layer 3 Max Nodes'},
+                        {data: 'Layer 4 Max Nodes'},
+                        {data: 'Layer 5 Max Nodes'},
+                        {data: 'Probability'},
+                        {data: 'Predicted Class'},
+                        {data: 'Actual Class'},
+                ],
+            });
+        });
+
+    </script>
+
+{% endblock %}

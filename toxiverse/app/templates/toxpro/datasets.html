@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% block content %}
+
+  {# Auto-refresh while import task is running #}
+  {% if task_in_progress %}
+  <div class="alert alert-info mt-2" role="status" aria-live="polite">
+    An “Import Chemical” task is in progress. This page will refresh every 5 seconds until it completes.
+  </div>
+  <script>
+    setTimeout(function () { window.location.reload(); }, 5000);
+  </script>
+  {% endif %}
+
+  {# Disable PubChem import while task runs #}
+  {% set disabled_import = 'disabled' if task_in_progress else '' %}
+
+  <!-- Intro -->
+  <section class="hero">
+    <div class="container">
+      <div class="tv-card p-4 p-md-5">
+        <div class="section-title mb-3">
+          <span class="dot"></span> Upload or Retrieve Dataset
+        </div>
+        <p class="mb-0 subtle">
+          ToxiVerse accepts CSV and SDF inputs for up to <strong>1000</strong> chemicals.
+          Imported or uploaded datasets will appear in the <em>Select dataset</em> list.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Content -->
+  <section class="py-5">
+    <div class="container">
+      <div class="row">
+
+        <!-- Left column: Upload + Import -->
+        <div class="col-lg-4 mb-4">
+          <div class="tv-card p-4 h-100">
+            <!-- Upload -->
+            <h5 class="mb-2">Upload a dataset</h5>
+            <p class="subtle">
+              Choose a file type to upload a new dataset. For CSV, include a <code>SMILES</code> column and enter column
+              names exactly as they appear (case-sensitive).
+            </p>
+
+            <form action="{{ url_for('toxpro.upload_dataset') }}" method="post" enctype="multipart/form-data"
+                  onsubmit="return validateFileUpload();">
+              <div class="mb-3">
+                <label class="mb-1">Choose file format:</label>
+                <div class="d-flex flex-column">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="file-format" id="format-csv" value="csv" checked>
+                    <label class="form-check-label" for="format-csv">CSV</label>
+                    <!-- colored CSV sample -->
+                    <a href="{{ url_for('toxpro.example_file', format='csv') }}" class="btn btn-sample-csv btn-sm mt-2">
+                      Download Sample CSV
+                    </a>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="file-format" id="format-sdf" value="sdf">
+                    <label class="form-check-label" for="format-sdf">SDF</label>
+                    <!-- colored SDF sample -->
+                    <a href="{{ url_for('toxpro.example_file', format='sdf') }}" class="btn btn-sample-sdf btn-sm mt-2">
+                      Download Sample SDF
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="mb-1">Select file</label>
+                <input type="file" class="form-control-file" name="compound_file" id="compound_file" accept=".csv,.sdf" required>
+              </div>
+
+              <div class="form-group">
+                <label class="mb-1">Compound ID
+                  <small class="text-muted">(e.g., CID; must be a property in SDF or a column in CSV)</small>
+                </label>
+                <input type="text" class="form-control form-control-sm" name="cmp-id-property" placeholder="CID">
+              </div>
+
+              <div class="form-group">
+                <label class="mb-1">Activity column
+                  <small class="text-muted">(e.g., <code>Activity_Binary</code> or <code>Activity_Reg</code>)</small>
+                </label>
+                <input type="text" class="form-control form-control-sm" name="act-id-property" placeholder="Activity_Binary">
+              </div>
+
+              <div class="form-group">
+                <label class="mb-1">SMILES column (CSV only)
+                  <small class="text-muted">(e.g., <code>SMILES</code>)</small>
+                </label>
+                <input type="text" class="form-control form-control-sm" name="smiles-id-property" placeholder="SMILES">
+              </div>
+
+              <div class="mb-3">
+                <h6 class="mb-2">Select dataset type</h6>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" name="dataset-type" id="radioBinary" value="Binary" checked>
+                  <label class="form-check-label" for="radioBinary">Binary</label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" name="dataset-type" id="radioContinuous" value="Continuous">
+                  <label class="form-check-label" for="radioContinuous">Continuous</label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-cta">Upload dataset</button>
+            </form>
+
+            <hr class="my-4">
+
+            <!-- Import -->
+            <form action="{{ url_for('toxpro.import_pubchem') }}" method="post" enctype="multipart/form-data">
+              <fieldset {{ disabled_import }}>
+                <h5 class="mb-2">Import a PubChem Bioassay</h5>
+                <p class="subtle">
+                  Instead of uploading a file, pull compounds from PubChem by entering an Assay ID (AID).
+                  Once imported, the dataset will show up in the “Select dataset” list.
+                </p>
+
+                <div class="form-group">
+                  <label class="mb-1">Enter PubChem AID
+                    <small class="text-muted">(e.g., 1000)</small>
+                  </label>
+                  <input type="text" class="form-control form-control-sm" name="pubchem_aid" {{ disabled_import }} placeholder="AID">
+                </div>
+
+                <!-- colored Import button -->
+                <button type="submit" class="btn btn-import" {{ disabled_import }}>
+                  {% if task_in_progress %}Working…{% else %}Import dataset{% endif %}
+                </button>
+              </fieldset>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right column: Dataset list + table -->
+        {% if user_datasets %}
+        <div class="col-lg-8">
+          <div class="tv-card p-4">
+            <form action="{{ url_for('toxpro.remove_dataset') }}" method="post" enctype="multipart/form-data">
+              <div class="form-group">
+                <label for="dataset-selection" class="font-weight-600">Select dataset:</label>
+                <select class="form-control" name="dataset-selection" id="dataset-selection">
+                  {% for dataset in user_datasets %}
+                    <option value="{{ dataset.dataset_name }}">{{ dataset.dataset_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="feature-table mt-3">
+                <div class="thead">Preview</div>
+                <div class="table-responsive">
+                  <table id="data" class="table compact mb-0">
+                    <thead>
+                      <tr>
+                        <th>Chemical</th>
+                        <th>Activity</th>
+                        <th>Structure</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="mt-3 d-flex flex-wrap">
+                <button type="submit" class="btn btn-ghost"
+                        name="action" value="Remove dataset"
+                        onclick="return confirm('Are you sure you want to delete this dataset?')">
+                  Remove dataset
+                </button>
+
+                <button type="submit" name="action" value="Download dataset as CSV file"
+                        class="btn btn-cta ml-2">
+                  Download dataset as CSV
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Validate the chosen file based on the selected file format
+    function validateFileUpload() {
+      const selectedFormat = document.querySelector('input[name="file-format"]:checked')?.value;
+      const fileInput = document.getElementById('compound_file');
+      const filePath = fileInput && fileInput.value;
+
+      if (!selectedFormat) { alert('Please choose a file format (CSV or SDF).'); return false; }
+      if (!filePath) { alert('Please select a file to upload.'); return false; }
+
+      const fileExtension = (filePath.split('.').pop() || '').toLowerCase();
+      if ((selectedFormat === 'csv' && fileExtension !== 'csv') ||
+          (selectedFormat === 'sdf' && fileExtension !== 'sdf')) {
+        alert(`Invalid file format! Please upload a .${selectedFormat} file.`);
+        return false;
+      }
+      if (typeof showLoader === 'function') showLoader();
+      return true;
+    }
+
+    // DataTable init
+    $(document).ready(function () {
+      if ($('#data').length) {
+        $('#data').DataTable({
+          serverSide: true,
+          ajax: {
+            url: '/api/dataset-data',
+            data: function(d) {
+              d.datasetSelection = getDatasetSelection();
+            },
+          },
+          columns: [
+            {data: 'Chemical', orderable: false, searchable: false},
+            {data: 'Activity', orderable: false, searchable: false},
+            {data: 'Structure', orderable: false, searchable: false}
+          ],
+        });
+      }
+    });
+
+    // React to dataset dropdown changes
+    function getDatasetSelection() {
+      var sel = document.getElementById('dataset-selection');
+      return sel ? sel.value : '';
+    }
+    function reloadPreview() {
+      var tbl = $('#data').DataTable();
+      if (tbl) { tbl.ajax.reload(); }
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      var e = document.getElementById('dataset-selection');
+      if (e) e.addEventListener('change', reloadPreview);
+    });
+  </script>
+
+{% endblock %}

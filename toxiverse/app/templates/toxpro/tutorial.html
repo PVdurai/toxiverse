@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-3">
+        <span class="dot"></span> Tutorial
+      </div>
+      <p class="mb-0 subtle">
+        The document provides detailed, step-by-step guidance for using ToxiVerse. You can read it below,
+        or use the buttons to download or open it in a new tab.
+      </p>
+
+      <div class="mt-3 d-flex flex-wrap">
+        <a class="btn btn-cta btn-equal mr-2"
+           href="{{ url_for('static', filename='Tutorial.pdf') }}"
+           download>
+          Download PDF
+        </a>
+        <a class="btn btn-ghost btn-equal"
+           href="{{ url_for('static', filename='Tutorial.pdf') }}"
+           target="_blank" rel="noopener">
+          Open in new tab
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PDF Viewer -->
+<section class="py-5">
+  <div class="container">
+    <div class="tv-card p-0">
+      <!-- Keep height flexible; 75vh feels good on most screens -->
+      <div class="p-2 p-md-3">
+        <div style="height:75vh; width:100%; overflow:hidden; border-radius:12px;">
+          <iframe
+            src="{{ url_for('static', filename='Tutorial.pdf') }}"
+            title="ToxiVerse Tutorial PDF"
+            style="border:0; width:100%; height:100%;"
+          ></iframe>
+        </div>
+        <noscript>
+          <p class="mt-3">
+            JavaScript is disabled. You can <a class="pi-alink-color" href="{{ url_for('static', filename='Tutorial.pdf') }}">download the tutorial here</a>.
+          </p>
+        </noscript>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

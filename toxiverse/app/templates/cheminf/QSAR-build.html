@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if task_in_progress %}
+<div class="alert alert-info mt-2" role="status" aria-live="polite">
+  A “QSAR Builder” task is in progress. This page will refresh every 5 seconds until it completes.
+</div>
+<script>
+  setTimeout(function () { window.location.reload(); }, 5000);
+</script>
+{% endif %}
+
+{% set disabled = 'disabled' if task_in_progress else '' %}
+
+<!-- Intro (hero) -->
+<section class="hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-3">
+        <span class="dot"></span> QSAR Builder
+      </div>
+      <p class="mb-0 subtle">
+        Quantitative Structure-Activity Relationship (QSAR) models relate chemical structures to observed biological activities.
+        A model is defined by a feature set (e.g., ECFP6) and a learning algorithm (e.g., Random Forest). Select a dataset,
+        feature(s), and algorithm(s), then click <em>Build QSAR</em>. Saved models are available in <strong>Cheminformatics → QSAR Predictor</strong>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Builder Form -->
+<section class="py-5">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5" id="dataset-card">
+
+      {% if not user_datasets %}
+        <p class="mb-0">
+          Please upload a dataset using <strong>Cheminformatics → Upload or Retrieve Dataset</strong> to build QSAR model(s).
+        </p>
+      {% else %}
+
+      <form id="qsar-form"
+            action="{{ url_for('cheminf.QSAR_build') }}"
+            method="post"
+            enctype="multipart/form-data"
+            onsubmit="return validateQSARForm(event)">
+        <fieldset {{ disabled }}>
+          <div class="row text-muted">
+
+            <!-- Dataset -->
+            <div class="col-lg-12 mb-3">
+              <h6 class="mb-2">Select dataset(s):</h6>
+              <select id="dataset-selection"
+                      data-placeholder="Choose or type the dataset name..."
+                      multiple
+                      class="chosen-select"
+                      name="dataset-selection"
+                      {{ disabled }}>
+                {% for dataset in user_datasets %}
+                  <option value="{{ dataset.dataset_name }}">{{ dataset.dataset_name }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">You may select one or more datasets.</small>
+            </div>
+
+            <!-- Features -->
+            <div class="col-lg-4 mb-3">
+              <h6 class="mb-2">Select features:</h6>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="feat-ecfp6" name="descriptor-selection" value="ECFP6" checked {{ disabled }}>
+                <label class="form-check-label" for="feat-ecfp6">ECFP6</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="feat-fcfp6" name="descriptor-selection" value="FCFP6" {{ disabled }}>
+                <label class="form-check-label" for="feat-fcfp6">FCFP6</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="feat-rdkit" name="descriptor-selection" value="RDKit" {{ disabled }}>
+                <label class="form-check-label" for="feat-rdkit">RDKit Descriptors</label>
+              </div>
+
+              <small class="form-text text-muted mt-2">
+                <strong>ECFP6</strong> encodes circular substructural patterns around each atom and is widely used for QSAR classification and regression.<br>
+                <strong>FCFP6</strong> is similar to ECFP6 but emphasizes functional or pharmacophoric features instead of only atom identity.<br>
+                <strong>RDKit Descriptors</strong> are calculated molecular properties such as physicochemical and topological features.<br>
+                You may select one or more feature sets to compare model performance.
+              </small>
+            </div>
+
+            <!-- Algorithms -->
+            <div class="col-lg-4 mb-3">
+              <h6 class="mb-2">Select algorithm:</h6>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="alg-rf" name="algorithm-selection" value="RF" checked {{ disabled }}>
+                <label class="form-check-label" for="alg-rf">Random Forest (RF)</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="alg-knn" name="algorithm-selection" value="kNN" {{ disabled }}>
+                <label class="form-check-label" for="alg-knn">k-Nearest Neighbors (kNN)</label>
+              </div>
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="alg-svm" name="algorithm-selection" value="SVM" {{ disabled }}>
+                <label class="form-check-label" for="alg-svm">Support Vector Machine (SVM)</label>
+              </div>
+
+              <small class="form-text text-muted mt-2">
+                <strong>Random Forest (RF)</strong> is an ensemble method that combines many decision trees and is often a strong default choice.<br>
+                <strong>k-Nearest Neighbors (kNN)</strong> predicts a compound based on the most similar compounds in the training set.<br>
+                <strong>Support Vector Machine (SVM)</strong> learns an optimal boundary between classes or fits relationships in a high-dimensional space.<br>
+                Multiple algorithms can be selected to build and compare models.
+              </small>
+            </div>
+
+            <!-- Task -->
+            <div class="col-lg-4 mb-3">
+              <h6 class="mb-2">Select activity type:</h6>
+              <div class="form-check">
+                <input type="radio" class="form-check-input" id="type-class" name="type-selection" value="Classification" checked {{ disabled }}>
+                <label class="form-check-label" for="type-class">Classification</label>
+              </div>
+              <div class="form-check">
+                <input type="radio" class="form-check-input" id="type-regr" name="type-selection" value="Regression" {{ disabled }}>
+                <label class="form-check-label" for="type-regr">Regression</label>
+              </div>
+
+              <small class="form-text text-muted mt-2">
+                <strong>Classification</strong> is used when activity values represent categories such as active/inactive or toxic/non-toxic.<br>
+                <strong>Regression</strong> is used when activity values are continuous numerical measurements such as IC50, EC50, or other assay values.<br>
+                Classification models assign class labels, while regression models predict numeric values.
+              </small>
+            </div>
+
+          </div>
+
+          <div id="qsar-feedback" class="mt-2" aria-live="polite"></div>
+
+          <p class="mt-2 mb-0 small text-muted">
+            After submission, you will be redirected to a page with your Job ID. It may take 20 minutes on average to complete.
+            The link will be accessible for 24 hours from submission and can be bookmarked.
+          </p>
+
+          <div class="row">
+            <div class="col-12 pt-4 pb-2 text-center">
+              <button id="qsar-submit" type="submit" class="btn btn-cta" {{ disabled }}>
+                {% if task_in_progress %}Working…{% else %}Build QSAR{% endif %}
+              </button>
+            </div>
+          </div>
+
+        </fieldset>
+      </form>
+      {% endif %}
+
+    </div>
+  </div>
+</section>
+
+<script type="text/javascript">
+  (function(){
+    function textFeedback(msg, ok) {
+      var el = document.getElementById('qsar-feedback');
+      if (!el) return;
+      el.className = ok ? 'text-success' : 'text-danger';
+      el.textContent = msg || '';
+    }
+
+    window.validateQSARForm = function(e){
+      var ds = document.getElementById('dataset-selection');
+      var descs = document.querySelectorAll('input[name="descriptor-selection"]:checked');
+      var algs = document.querySelectorAll('input[name="algorithm-selection"]:checked');
+      var btn = document.getElementById('qsar-submit');
+
+      var chosenOk = ds && (Array.from(ds.options).some(o => o.selected));
+      if (!chosenOk) {
+        e.preventDefault();
+        textFeedback('Please select at least one dataset.', false);
+        return false;
+      }
+      if (descs.length < 1) {
+        e.preventDefault();
+        textFeedback('Please select at least one feature set.', false);
+        return false;
+      }
+      if (algs.length < 1) {
+        e.preventDefault();
+        textFeedback('Please select at least one algorithm.', false);
+        return false;
+      }
+
+      textFeedback('Submitting…', true);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Working…';
+      }
+      if (typeof showLoader === 'function') { showLoader(); }
+      return true;
+    };
+
+    document.addEventListener('DOMContentLoaded', function(){
+      if (typeof $ !== 'undefined' && $('.chosen-select').chosen) {
+        $('.chosen-select').chosen({
+          no_results_text: 'Oops, no matching results!',
+          width: '100%'
+        });
+      }
+    });
+  })();
+</script>
+
+{% endblock %}

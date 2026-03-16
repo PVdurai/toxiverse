@@ -1,0 +1,373 @@
+{% extends "base.html" %}
+{% block body_class %}job-status{% endblock %}
+{% block content %}
+
+<style>
+  /* High-contrast styling for model names and tags */
+  .model-name{
+    font-weight: 700;
+    color: #0a58ca; /* deep bootstrap-ish blue for strong contrast */
+  }
+  @media (prefers-color-scheme: dark){
+    .model-name{ color: #66b2ff; } /* brighten in dark mode */
+  }
+  .tag-badge{
+    color: #fff !important;
+    font-weight: 600;
+  }
+  .tag-badge.alg { background-color: #0d6efd; }   /* algorithm badge: primary */
+  .tag-badge.desc { background-color: #212529; }  /* descriptor badge: dark */
+</style>
+
+<div class="container-fluid py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-xl-11">
+
+      <!-- Job Status Card -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fa-solid fa-flask-vial me-2"></i>
+            {% if job.job_type == 'bioprofiler' %}Bioprofiler{% else %}QSAR Builder{% endif %} Job Status
+          </h4>
+        </div>
+
+        <div class="card-body">
+          <!-- Job ID -->
+          <div class="mb-4">
+            <h6 class="text-muted">Job ID</h6>
+            <code class="text-dark">{{ job.job_id }}</code>
+          </div>
+
+          <!-- Status Badge -->
+          <div class="mb-4">
+            <h6 class="text-muted">Status</h6>
+            {% if job.status == 'finished' %}
+              <span class="badge bg-success fs-5">
+                <i class="fa-solid fa-circle-check me-1"></i> Completed
+              </span>
+            {% elif job.status == 'running' %}
+              <span class="badge bg-warning fs-5">
+                <i class="fa-solid fa-spinner fa-spin me-1"></i> Running...
+              </span>
+            {% elif job.status == 'queued' %}
+              <span class="badge bg-info fs-5">
+                <i class="fa-solid fa-clock me-1"></i> Queued
+              </span>
+            {% elif job.status == 'failed' %}
+              <span class="badge bg-danger fs-5">
+                <i class="fa-solid fa-circle-xmark me-1"></i> Failed
+              </span>
+            {% endif %}
+          </div>
+
+          <!-- Time Information -->
+          <div class="mb-4">
+            <h6 class="text-muted">Submitted</h6>
+            <p class="mb-1">{{ job.created_at|to_cst }}</p>
+            {% if job.updated_at and job.status == 'finished' %}
+              <small class="text-muted">Completed: {{ job.updated_at|to_cst }}</small>
+            {% endif %}
+          </div>
+
+          <!-- Status Messages -->
+          {% if job.status == 'finished' %}
+            <div class="alert alert-success">
+              <i class="fa-solid fa-circle-check me-2"></i>
+              <strong>Job completed successfully!</strong> Your results are ready for download below.
+            </div>
+          {% elif job.status == 'running' %}
+            <div class="alert alert-warning">
+              <i class="fa-solid fa-hourglass-half me-2"></i>
+              <strong>Processing your request...</strong> This page will automatically refresh. You can bookmark this page and come back later.
+            </div>
+          {% elif job.status == 'queued' %}
+            <div class="alert alert-info">
+              <i class="fa-solid fa-clock me-2"></i>
+              <strong>Your job is in the queue.</strong> It will start processing soon. You can bookmark this page and come back later.
+            </div>
+          {% elif job.status == 'failed' %}
+            <div class="alert alert-danger">
+              <i class="fa-solid fa-triangle-exclamation me-2"></i>
+              <strong>Job failed.</strong> Please try submitting again or contact support if the problem persists.
+            </div>
+          {% endif %}
+
+          <!-- Download Buttons (only when finished) -->
+          {% if job.status == 'finished' %}
+            <div class="mt-5">
+              <h5 class="mb-4">Download Results</h5>
+
+              {% if job.job_type == 'bioprofiler' %}
+                <!-- Bioprofiler Results -->
+                <form method="POST" action="{{ url_for('toxpro.download_bioprofile') }}">
+                  <input type="hidden" name="session_id" value="{{ session_id }}">
+
+                  <div class="overflow-x-auto pb-2" style="white-space: nowrap; -webkit-overflow-scrolling: touch; overflow-y: hidden;">
+                    <button type="submit" name="action" value="Download Bioprofile" class="btn btn-primary btn-lg me-3">
+                      <i class="fa-solid fa-download me-2"></i>
+                      Initial Bioprofile
+                    </button>
+                    <button type="submit" name="action" value="Download Heatmap" class="btn btn-success btn-lg me-3">
+                      <i class="fa-solid fa-download me-2"></i>
+                      Heatmap
+                    </button>
+                    <button type="submit" name="action" value="Download Model Metrics" class="btn btn-warning btn-lg me-3">
+                      <i class="fa-solid fa-download me-2"></i>
+                      Model Metrics
+                    </button>
+                    <button type="submit" name="action" value="Download Model Metrics Plot" class="btn btn-secondary btn-lg me-3">
+                      <i class="fa-solid fa-download me-2"></i>
+                      Metrics Plot
+                    </button>
+                    <button type="submit" name="action" value="Download Complete Bioprofile" class="btn btn-info btn-lg">
+                      <i class="fa-solid fa-download me-2"></i>
+                      Complete Bioprofile
+                    </button>
+                  </div>
+                </form>
+
+                <!-- What Each Download Option Means -->
+                <div class="mt-5">
+                  <h5 class="mb-3">What Each Download Option Means</h5>
+                  <div class="card">
+                    <div class="card-body">
+                      <ul class="list-unstyled mb-0">
+                        <li class="mb-3">
+                          <strong class="text-primary"><i class="fa-solid fa-table me-2"></i>Initial Bioprofile:</strong>
+                          <span class="text-muted">Exports the bioprofile matrix with chemicals as rows and bioassays as columns. Activity values are encoded as 1 (Active/Probe), -1 (Inactive), and 0 (Inconclusive/Unspecified/empty).</span>
+                        </li>
+                        <li class="mb-3">
+                          <strong class="text-success"><i class="fa-solid fa-image me-2"></i>Heatmap:</strong>
+                          <span class="text-muted">A clustered heatmap of the bioprofile matrix to spot activity patterns across assays and chemicals. Supports up to 2000 assay columns.</span>
+                        </li>
+                        <li class="mb-3">
+                          <strong class="text-warning"><i class="fa-solid fa-chart-bar me-2"></i>Model Metrics:</strong>
+                          <span class="text-muted">Detailed performance statistics (accuracy, precision, recall, F1-score, ROC AUC) for Random Forest models on top informative assays.</span>
+                        </li>
+                        <li class="mb-3">
+                          <strong class="text-secondary"><i class="fa-solid fa-chart-line me-2"></i>Metrics Plot:</strong>
+                          <span class="text-muted">Box plot summarizing model performance for quick comparison.</span>
+                        </li>
+                        <li class="mb-0">
+                          <strong class="text-info"><i class="fa-solid fa-brain me-2"></i>Complete Bioprofile:</strong>
+                          <span class="text-muted">Returns the complete bioprofile matrix with missing bioactivity values imputed using trained models.</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+              {% elif job.job_type == 'qsar_build' %}
+                <!-- QSAR Build Results -->
+                {% if qsar_models and qsar_models|length > 0 %}
+                  <h5 class="mb-4">Trained Models ({{ qsar_models|length }})</h5>
+
+                  <!-- Download All Metrics Buttons -->
+                  <div class="mb-3">
+                    {% set has_classification = qsar_models|selectattr('type', 'equalto', 'Classification')|list|length > 0 %}
+                    {% set has_regression = qsar_models|selectattr('type', 'equalto', 'Regression')|list|length > 0 %}
+
+                    {% if has_classification %}
+                      <a href="{{ url_for('cheminf.download_job_metrics', user_id=job.user_id, type='classification', format='csv') }}"
+                         class="btn btn-outline-primary btn-sm me-2">
+                        Classification metrics file
+                      </a>
+                      <a href="{{ url_for('cheminf.download_job_metrics', user_id=job.user_id, type='classification', format='png') }}"
+                         class="btn btn-primary btn-sm me-2">
+                        Classification metrics figure
+                      </a>
+                    {% endif %}
+
+                    {% if has_regression %}
+                      <a href="{{ url_for('cheminf.download_job_metrics', user_id=job.user_id, type='regression', format='csv') }}"
+                         class="btn btn-outline-success btn-sm me-2">
+                        Regression metrics file
+                      </a>
+                      <a href="{{ url_for('cheminf.download_job_metrics', user_id=job.user_id, type='regression', format='png') }}"
+                         class="btn btn-success btn-sm">
+                        Regression metrics figure
+                      </a>
+                    {% endif %}
+                  </div>
+
+                  {% set has_classification = qsar_models|selectattr('type', 'equalto', 'Classification')|list|length > 0 %}
+                  {% set has_regression = qsar_models|selectattr('type', 'equalto', 'Regression')|list|length > 0 %}
+
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Model</th>
+                          <th>Type</th>
+                          {% if has_classification and not has_regression %}
+                            <!-- Classification only -->
+                            <th>Accuracy</th>
+                            <th>F1 Score</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>ROC AUC</th>
+                          {% elif has_regression and not has_classification %}
+                            <!-- Regression only -->
+                            <th>R² Score</th>
+                            <th>Max Error</th>
+                            <th>MSE</th>
+                            <th>MAPE</th>
+                            <th>Pinball Score</th>
+                          {% else %}
+                            <!-- Mixed: Show generic header -->
+                            <th>Metrics</th>
+                          {% endif %}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for model in qsar_models %}
+                        <tr>
+                          <!-- UPDATED: High-contrast Model cell -->
+                          <td>
+                            <div class="model-name">{{ model.name }}</div>
+                            <small>
+                              <span class="badge tag-badge alg">{{ model.algorithm }}</span>
+                              <span class="badge tag-badge desc">{{ model.descriptors }}</span>
+                            </small>
+                          </td>
+
+                          <td>
+                            {% if model.type == 'Classification' %}
+                              <span class="badge bg-info">Classification</span>
+                            {% else %}
+                              <span class="badge bg-success">Regression</span>
+                            {% endif %}
+                          </td>
+
+                          {% if model.cvresults %}
+                            {% if model.type == 'Classification' %}
+                              {% if has_classification and not has_regression %}
+                                <!-- Classification columns -->
+                                <td>{{ "%.2f"|format(model.cvresults.accuracy) if model.cvresults.accuracy else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.f1_score) if model.cvresults.f1_score else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.precision) if model.cvresults.precision else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.recall) if model.cvresults.recall else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.area_under_roc) if model.cvresults.area_under_roc else '-' }}</td>
+                              {% else %}
+                                <!-- Mixed mode: show in one cell -->
+                                <td>
+                                  <strong>ACC:</strong> {{ "%.2f"|format(model.cvresults.accuracy) if model.cvresults.accuracy else '-' }} |
+                                  <strong>F1:</strong> {{ "%.2f"|format(model.cvresults.f1_score) if model.cvresults.f1_score else '-' }} |
+                                  <strong>Precision:</strong> {{ "%.2f"|format(model.cvresults.precision) if model.cvresults.precision else '-' }} |
+                                  <strong>Recall:</strong> {{ "%.2f"|format(model.cvresults.recall) if model.cvresults.recall else '-' }} |
+                                  <strong>AUC:</strong> {{ "%.2f"|format(model.cvresults.area_under_roc) if model.cvresults.area_under_roc else '-' }}
+                                </td>
+                              {% endif %}
+                            {% elif model.type == 'Regression' %}
+                              {% if has_regression and not has_classification %}
+                                <!-- Regression columns -->
+                                <td>{{ "%.2f"|format(model.cvresults.r2_score) if model.cvresults.r2_score else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.max_error) if model.cvresults.max_error else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.mean_squared_error) if model.cvresults.mean_squared_error else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.mean_absolute_percentage_error) if model.cvresults.mean_absolute_percentage_error else '-' }}</td>
+                                <td>{{ "%.2f"|format(model.cvresults.pinball_score) if model.cvresults.pinball_score else '-' }}</td>
+                              {% else %}
+                                <!-- Mixed mode: show in one cell -->
+                                <td>
+                                  <strong>R²:</strong> {{ "%.2f"|format(model.cvresults.r2_score) if model.cvresults.r2_score else '-' }} |
+                                  <strong>Max Error:</strong> {{ "%.2f"|format(model.cvresults.max_error) if model.cvresults.max_error else '-' }} |
+                                  <strong>MSE:</strong> {{ "%.2f"|format(model.cvresults.mean_squared_error) if model.cvresults.mean_squared_error else '-' }} |
+                                  <strong>MAPE:</strong> {{ "%.2f"|format(model.cvresults.mean_absolute_percentage_error) if model.cvresults.mean_absolute_percentage_error else '-' }} |
+                                  <strong>Pinball:</strong> {{ "%.2f"|format(model.cvresults.pinball_score) if model.cvresults.pinball_score else '-' }}
+                                </td>
+                              {% endif %}
+                            {% endif %}
+                          {% else %}
+                            {% if has_classification and not has_regression %}
+                              <td colspan="5"><span class="text-muted">N/A</span></td>
+                            {% elif has_regression and not has_classification %}
+                              <td colspan="5"><span class="text-muted">N/A</span></td>
+                            {% else %}
+                              <td><span class="text-muted">N/A</span></td>
+                            {% endif %}
+                          {% endif %}
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Link to QSAR Predictor -->
+                  <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="mb-2"><i class="fa-solid fa-arrow-right me-2"></i>Use Your Model for Predictions</h6>
+                    <p class="mb-2 small text-muted">Your trained model(s) are ready! You can now use them to predict activity/toxicity for new chemicals.</p>
+                    {% if user_session_id %}
+                    <a href="{{ url_for('cheminf.QSAR_predict', session_id=user_session_id) }}" class="btn btn-primary btn-sm" target="_blank">
+                      <i class="fa-solid fa-wave-square me-2"></i>
+                      Go to QSAR Predictor
+                    </a>
+                    <small class="d-block mt-2 text-muted">
+                      <i class="fa-solid fa-check-circle me-1"></i>
+                      Note: Opens in new tab with models from this session.
+                    </small>
+                    {% else %}
+                    <p class="text-muted">Unable to generate predictor link.</p>
+                    {% endif %}
+                  </div>
+
+                {% else %}
+                  <div class="alert alert-info">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    <strong>QSAR model training complete!</strong> Visit the <a href="{{ url_for('cheminf.QSAR_build') }}" class="alert-link">QSAR Builder page</a> to view performance metrics and download trained models.
+                  </div>
+                {% endif %}
+
+              {% else %}
+                <div class="alert alert-secondary">
+                  <i class="fa-solid fa-check-circle me-2"></i>
+                  Job completed successfully. Check the relevant page for your results.
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+
+          <!-- Expiration Notice -->
+          <div class="mt-4 pt-4 border-top">
+            <small class="text-muted">
+              <i class="fa-solid fa-info-circle me-1"></i>
+              This link and all results will expire 24 hours after submission.
+            </small>
+          </div>
+
+          <!-- Refresh Button -->
+          {% if job.status in ['queued', 'running'] %}
+            <div class="mt-3">
+              <button onclick="location.reload()" class="btn btn-outline-primary">
+                <i class="fa-solid fa-rotate me-2"></i>
+                Refresh Status
+              </button>
+            </div>
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- Back to Home -->
+      <div class="text-center mt-4">
+        <a href="/" class="btn btn-link">
+          <i class="fa-solid fa-arrow-left me-2"></i>
+          Back to Home
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Auto-refresh for queued/running jobs -->
+{% if job.status in ['queued', 'running'] %}
+<script>
+  // Auto-refresh every 10 seconds
+  setTimeout(function() {
+    location.reload();
+  }, 10000);
+</script>
+{% endif %}
+
+{% endblock %}

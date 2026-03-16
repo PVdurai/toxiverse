@@ -1,0 +1,41 @@
+version: '2'
+services:
+    redis:
+        image: redis
+#        ports:
+#            - "6379:6379"
+        volumes:
+            - ./redis:/usr/local/etc/redis
+#        command: redis-server --include /usr/local/etc/redis/redis.conf
+
+    toxpro:
+        build: .
+        # this is outlined here: https://docs.docker.com/compose/environment-variables/
+        env_file:
+            - docker-environment-do.env
+        ports:
+            - "5000:5000"
+        image: toxpro:lastest
+        volumes:
+            - ./instance/:/home/toxpro/instance
+            - ./data/:/home/toxpro/data
+        entrypoint: ["./boot.sh"]
+        stdin_open: true
+        tty: true
+
+    worker:
+        build: .
+        env_file:
+            - docker-environment-do.env
+        depends_on:
+            - redis
+            - toxpro
+        entrypoint: ["./boot_worker.sh"]
+        volumes:
+            - ./instance/:/home/toxpro/instance
+            - ./data/:/home/toxpro/data
+
+# this is necessary for the workers to
+# share writing to the SQLite I believ
+volumes:
+  instance_vol:

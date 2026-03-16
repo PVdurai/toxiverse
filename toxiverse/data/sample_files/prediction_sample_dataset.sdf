@@ -1,0 +1,1497 @@
+Molecule 1
+  DSViewer          3D                             0
+
+  0  0  0  0  0  0  0  0  0  0999 V2000
+M  END
+> <SMILES>
+C(CCl)Cl
+
+> <CID>
+11
+
+$$$$
+Molecule 2
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 2
+
+> <SMILES>
+C1=CC(=C(C=C1Cl)Cl)Cl
+
+> <CID>
+13
+
+$$$$
+Molecule 3
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 3
+
+> <SMILES>
+C(CO)O
+
+> <CID>
+174
+
+$$$$
+Molecule 4
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 4
+
+> <SMILES>
+CC(=O)C
+
+> <CID>
+180
+
+$$$$
+Molecule 5
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 5
+
+> <SMILES>
+C1=CC=C(C=C1)C=O
+
+> <CID>
+240
+
+$$$$
+Molecule 6
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 6
+
+> <SMILES>
+C1=CC=CC=C1
+
+> <CID>
+241
+
+$$$$
+Molecule 7
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 7
+
+> <SMILES>
+C1=CC=C(C=C1)C(=O)O
+
+> <CID>
+243
+
+$$$$
+Molecule 8
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 8
+
+> <SMILES>
+CCCCO
+
+> <CID>
+263
+
+$$$$
+Molecule 9
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 9
+
+> <SMILES>
+C1(=O)C2(C3(C4(C1(C5(C2(C3(C(C45Cl)(Cl)Cl)Cl)Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+299
+
+$$$$
+Molecule 10
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 10
+
+> <SMILES>
+CC1=CC=CC=C1O
+
+> <CID>
+335
+
+$$$$
+Molecule 11
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 11
+
+> <SMILES>
+CC1=CC(=CC=C1)O
+
+> <CID>
+342
+
+$$$$
+Molecule 12
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 12
+
+> <SMILES>
+C=O
+
+> <CID>
+712
+
+$$$$
+Molecule 13
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 13
+
+> <SMILES>
+C1(C(C(C(C(C1Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+727
+
+$$$$
+Molecule 14
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 14
+
+> <SMILES>
+CO
+
+> <CID>
+887
+
+$$$$
+Molecule 15
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 15
+
+> <SMILES>
+C1=CC=C2C=CC=CC2=C1
+
+> <CID>
+931
+
+$$$$
+Molecule 16
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 16
+
+> <SMILES>
+CN(C)C1=CC=CC=C1
+
+> <CID>
+949
+
+$$$$
+Molecule 17
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 17
+
+> <SMILES>
+C1(=C(C(=C(C(=C1Cl)Cl)Cl)Cl)Cl)O
+
+> <CID>
+992
+
+$$$$
+Molecule 18
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 18
+
+> <SMILES>
+C1=CC=C(C=C1)O
+
+> <CID>
+996
+
+$$$$
+Molecule 19
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 19
+
+> <SMILES>
+C1=CC=NC=C1
+
+> <CID>
+1049
+
+$$$$
+Molecule 20
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 20
+
+> <SMILES>
+CC1=CC=CC=C1
+
+> <CID>
+1140
+
+$$$$
+Molecule 21
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 21
+
+> <SMILES>
+C1=C(C(=CC(=C1Cl)Cl)Cl)OCC(=O)O
+
+> <CID>
+1480
+
+$$$$
+Molecule 22
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 22
+
+> <SMILES>
+C1=CC(=C(C=C1Cl)Cl)OCC(=O)O
+
+> <CID>
+1486
+
+$$$$
+Molecule 23
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 23
+
+> <SMILES>
+C1=CC(=C(C=C1Cl)Cl)OCCCC(=O)O
+
+> <CID>
+1489
+
+$$$$
+Molecule 24
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 24
+
+> <SMILES>
+C1=CC(=C(C=C1[N+](=O)[O-])[N+](=O)[O-])O
+
+> <CID>
+1493
+
+$$$$
+Molecule 25
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 25
+
+> <SMILES>
+CC(=O)NP(=O)(OC)SC
+
+> <CID>
+1982
+
+$$$$
+Molecule 26
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 26
+
+> <SMILES>
+CCC1=CC=CC(=C1N(COCC)C(=O)CCl)C
+
+> <CID>
+1988
+
+$$$$
+Molecule 27
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 27
+
+> <SMILES>
+CCC1=C(C(=CC=C1)CC)N(COC)C(=O)CCl
+
+> <CID>
+2078
+
+$$$$
+Molecule 28
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 28
+
+> <SMILES>
+C1C2C=CC1C3C2C4(C(=C(C3(C4(Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+2087
+
+$$$$
+Molecule 29
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 29
+
+> <SMILES>
+CCNC1=NC(=NC(=N1)Cl)NC(C)C
+
+> <CID>
+2256
+
+$$$$
+Molecule 30
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 30
+
+> <SMILES>
+C1=CC=C(C=C1)N=NC2=CC=CC=C2
+
+> <CID>
+2272
+
+$$$$
+Molecule 31
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 31
+
+> <SMILES>
+CCCCN(CC)C1=C(C=C(C=C1[N+](=O)[O-])C(F)(F)F)[N+](=O)[O-]
+
+> <CID>
+2319
+
+$$$$
+Molecule 32
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 32
+
+> <SMILES>
+CC(C)N1C(=O)C2=CC=CC=C2NS1(=O)=O
+
+> <CID>
+2328
+
+$$$$
+Molecule 33
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 33
+
+> <SMILES>
+C1=CC=C2C3=C4C(=CC2=C1)C=CC5=C4C(=CC=C5)C=C3
+
+> <CID>
+2336
+
+$$$$
+Molecule 34
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 34
+
+> <SMILES>
+CCCCOC(=O)C1=CC=CC=C1C(=O)OCC2=CC=CC=C2
+
+> <CID>
+2347
+
+$$$$
+Molecule 35
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 35
+
+> <SMILES>
+CC1(CC2=C(O1)C(=CC=C2)OC(=O)NC)C
+
+> <CID>
+2566
+
+$$$$
+Molecule 36
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 36
+
+> <SMILES>
+C(C(Cl)(Cl)Cl)(O)O
+
+> <CID>
+2707
+
+$$$$
+Molecule 37
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 37
+
+> <SMILES>
+CC(C)OC(=O)NC1=CC(=CC=C1)Cl
+
+> <CID>
+2728
+
+$$$$
+Molecule 38
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 38
+
+> <SMILES>
+CC1(C(C1C(=O)OC(C#N)C2=CC(=CC=C2)OC3=CC=CC=C3)C=C(Cl)Cl)C
+
+> <CID>
+2912
+
+$$$$
+Molecule 39
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 39
+
+> <SMILES>
+COC(=O)C1=C(C(=C(C(=C1Cl)Cl)C(=O)OC)Cl)Cl
+
+> <CID>
+2943
+
+$$$$
+Molecule 40
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 40
+
+> <SMILES>
+CCCCOC(=O)C1=CC=CC=C1C(=O)OCCCC
+
+> <CID>
+3026
+
+$$$$
+Molecule 41
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 41
+
+> <SMILES>
+COC1=C(C=CC(=C1C(=O)O)Cl)Cl
+
+> <CID>
+3030
+
+$$$$
+Molecule 42
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 42
+
+> <SMILES>
+C1=CC(=CC=C1C(=C(Cl)Cl)C2=CC=C(C=C2)Cl)Cl
+
+> <CID>
+3035
+
+$$$$
+Molecule 43
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 43
+
+> <SMILES>
+C1=CC(=CC=C1C(C2=CC=C(C=C2)Cl)C(Cl)(Cl)Cl)Cl
+
+> <CID>
+3036
+
+$$$$
+Molecule 44
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 44
+
+> <SMILES>
+COP(=O)(OC)OC=C(Cl)Cl
+
+> <CID>
+3039
+
+$$$$
+Molecule 45
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 45
+
+> <SMILES>
+C1C2C3C(C1C4C2O4)C5(C(=C(C3(C5(Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+3048
+
+$$$$
+Molecule 46
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 46
+
+> <SMILES>
+CC(C)OP(=O)(C)OC(C)C
+
+> <CID>
+3073
+
+$$$$
+Molecule 47
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 47
+
+> <SMILES>
+CNC(=O)CSP(=S)(OC)OC
+
+> <CID>
+3082
+
+$$$$
+Molecule 48
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 48
+
+> <SMILES>
+CCOP(=S)(OCC)SCCSCC
+
+> <CID>
+3118
+
+$$$$
+Molecule 49
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 49
+
+> <SMILES>
+CN(C)C(=O)NC1=CC(=C(C=C1)Cl)Cl
+
+> <CID>
+3120
+
+$$$$
+Molecule 50
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 50
+
+> <SMILES>
+C1C2C(COS(=O)O1)C3(C(=C(C2(C3(Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+3224
+
+$$$$
+Molecule 51
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 51
+
+> <SMILES>
+C1CC2C(C(C1O2)C(=O)O)C(=O)O
+
+> <CID>
+3225
+
+$$$$
+Molecule 52
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 52
+
+> <SMILES>
+CCOCC
+
+> <CID>
+3283
+
+$$$$
+Molecule 53
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 53
+
+> <SMILES>
+CCOP(=S)(OCC)SCSP(=S)(OCC)OCC
+
+> <CID>
+3286
+
+$$$$
+Molecule 54
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 54
+
+> <SMILES>
+CC(C)C(C1=CC=C(C=C1)Cl)C(=O)OC(C#N)C2=CC(=CC=C2)OC3=CC=CC=C3
+
+> <CID>
+3347
+
+$$$$
+Molecule 55
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 55
+
+> <SMILES>
+C(C(=O)O)NCP(=O)(O)O
+
+> <CID>
+3496
+
+$$$$
+Molecule 56
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 56
+
+> <SMILES>
+C1=CC(C2C1C3(C(=C(C2(C3(Cl)Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+3589
+
+$$$$
+Molecule 57
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 57
+
+> <SMILES>
+C1=C(C(=C(C(=C1Cl)Cl)CC2=C(C(=CC(=C2Cl)Cl)Cl)O)O)Cl
+
+> <CID>
+3598
+
+$$$$
+Molecule 58
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 58
+
+> <SMILES>
+CCOC(=O)CC(C(=O)OCC)SP(=S)(OC)OC
+
+> <CID>
+4004
+
+$$$$
+Molecule 59
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 59
+
+> <SMILES>
+COP(=O)(N)SC
+
+> <CID>
+4096
+
+$$$$
+Molecule 60
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 60
+
+> <SMILES>
+COC1=CC=C(C=C1)C(C2=CC=C(C=C2)OC)C(Cl)(Cl)Cl
+
+> <CID>
+4115
+
+$$$$
+Molecule 61
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 61
+
+> <SMILES>
+COP(=S)(OC)OC1=CC=C(C=C1)[N+](=O)[O-]
+
+> <CID>
+4130
+
+$$$$
+Molecule 62
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 62
+
+> <SMILES>
+CCC1=CC=CC(=C1N(C(C)COC)C(=O)CCl)C
+
+> <CID>
+4169
+
+$$$$
+Molecule 63
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 63
+
+> <SMILES>
+COP(=O)(OC)OC(C(Cl)(Cl)Br)Br
+
+> <CID>
+4420
+
+$$$$
+Molecule 64
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 64
+
+> <SMILES>
+CC(C)NC1=NC(=NC(=N1)OC)NC(C)C
+
+> <CID>
+4928
+
+$$$$
+Molecule 65
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 65
+
+> <SMILES>
+CC(C)NC1=NC(=NC(=N1)SC)NC(C)C
+
+> <CID>
+4929
+
+$$$$
+Molecule 66
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 66
+
+> <SMILES>
+CC(C)N(C1=CC=CC=C1)C(=O)CCl
+
+> <CID>
+4931
+
+$$$$
+Molecule 67
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 67
+
+> <SMILES>
+CCC(=O)NC1=CC(=C(C=C1)Cl)Cl
+
+> <CID>
+4933
+
+$$$$
+Molecule 68
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 68
+
+> <SMILES>
+CC(C)(C)C1=CC=C(C=C1)OC2CCCCC2OS(=O)OCC#C
+
+> <CID>
+4936
+
+$$$$
+Molecule 69
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 69
+
+> <SMILES>
+CC(C)NC1=NC(=NC(=N1)Cl)NC(C)C
+
+> <CID>
+4937
+
+$$$$
+Molecule 70
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 70
+
+> <SMILES>
+CC(C)OC1=CC=CC=C1OC(=O)NC
+
+> <CID>
+4944
+
+$$$$
+Molecule 71
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 71
+
+> <SMILES>
+CC(=CC1C(C1(C)C)C(=O)OCC2=COC(=C2)CC3=CC=CC=C3)C
+
+> <CID>
+5053
+
+$$$$
+Molecule 72
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 72
+
+> <SMILES>
+CCCCSP(=O)(SCCCC)SCCCC
+
+> <CID>
+5125
+
+$$$$
+Molecule 73
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 73
+
+> <SMILES>
+CCNC1=NC(=NC(=N1)Cl)NCC
+
+> <CID>
+5216
+
+$$$$
+Molecule 74
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 74
+
+> <SMILES>
+CC(C)(C)C1=NN=C(S1)N(C)C(=O)NC
+
+> <CID>
+5383
+
+$$$$
+Molecule 75
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 75
+
+> <SMILES>
+CN(C)C(=S)SSC(=S)N(C)C
+
+> <CID>
+5455
+
+$$$$
+Molecule 76
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 76
+
+> <SMILES>
+CC(C)N(C(C)C)C(=O)SCC(=C(Cl)Cl)Cl
+
+> <CID>
+5543
+
+$$$$
+Molecule 77
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 77
+
+> <SMILES>
+C(Br)(Br)Br
+
+> <CID>
+5558
+
+$$$$
+Molecule 78
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 78
+
+> <SMILES>
+CCCN(CCC)C1=C(C=C(C=C1[N+](=O)[O-])C(F)(F)F)[N+](=O)[O-]
+
+> <CID>
+5569
+
+$$$$
+Molecule 79
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 79
+
+> <SMILES>
+CCN(CC)N=O
+
+> <CID>
+5921
+
+$$$$
+Molecule 80
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 80
+
+> <SMILES>
+C(Cl)(Cl)(Cl)Cl
+
+> <CID>
+5943
+
+$$$$
+Molecule 81
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 81
+
+> <SMILES>
+[C-]#N
+
+> <CID>
+5975
+
+$$$$
+Molecule 82
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 82
+
+> <SMILES>
+C1C2C(C(C1Cl)Cl)C3(C(=C(C2(C3(Cl)Cl)Cl)Cl)Cl)Cl
+
+> <CID>
+5993
+
+$$$$
+Molecule 83
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 83
+
+> <SMILES>
+C1=C(C(=C(C(=C1Cl)Cl)Cl)O)Cl
+
+> <CID>
+6028
+
+$$$$
+Molecule 84
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 84
+
+> <SMILES>
+C1=CC=C(C=C1)N
+
+> <CID>
+6115
+
+$$$$
+Molecule 85
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 85
+
+> <SMILES>
+CN(C)N=O
+
+> <CID>
+6124
+
+$$$$
+Molecule 86
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 86
+
+> <SMILES>
+CNC(=O)OC1=CC=CC2=CC=CC=C21
+
+> <CID>
+6129
+
+$$$$
+Molecule 87
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 87
+
+> <SMILES>
+C(Cl)(Cl)Cl
+
+> <CID>
+6212
+
+$$$$
+Molecule 88
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 88
+
+> <SMILES>
+C(C(Cl)(Cl)Cl)(Cl)(Cl)Cl
+
+> <CID>
+6214
+
+$$$$
+Molecule 89
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 89
+
+> <SMILES>
+CC(Cl)(Cl)Cl
+
+> <CID>
+6278
+
+$$$$
+Molecule 90
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 90
+
+> <SMILES>
+C1=CC(=CC=C1C(C2=CC=C(C=C2)Cl)C(Cl)Cl)Cl
+
+> <CID>
+6294
+
+$$$$
+Molecule 91
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 91
+
+> <SMILES>
+CBr
+
+> <CID>
+6323
+
+$$$$
+Molecule 92
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 92
+
+> <SMILES>
+CCCCC(CN1C=NC=N1)(C#N)C2=CC=C(C=C2)Cl
+
+> <CID>
+6336
+
+$$$$
+Molecule 93
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 93
+
+> <SMILES>
+C=CCl
+
+> <CID>
+6338
+
+$$$$
+Molecule 94
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 94
+
+> <SMILES>
+C(Cl)Cl
+
+> <CID>
+6344
+
+$$$$
+Molecule 95
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 95
+
+> <SMILES>
+C(=S)=S
+
+> <CID>
+6348
+
+$$$$
+Molecule 96
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 96
+
+> <SMILES>
+C(Cl)(Cl)Br
+
+> <CID>
+6359
+
+$$$$
+Molecule 97
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 97
+
+> <SMILES>
+C=C(Cl)Cl
+
+> <CID>
+6366
+
+$$$$
+Molecule 98
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 98
+
+> <SMILES>
+CC1CO1
+
+> <CID>
+6378
+
+$$$$
+Molecule 99
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 99
+
+> <SMILES>
+C(F)(Cl)(Cl)Cl
+
+> <CID>
+6389
+
+$$$$
+Molecule 100
+  SciTegic08112502122D
+
+  0  0  0  0  0  0            999 V2000
+M  END
+> <Name>
+Molecule 100
+
+> <SMILES>
+C(F)(F)(Cl)Cl
+
+> <CID>
+6391
+
+$$$$

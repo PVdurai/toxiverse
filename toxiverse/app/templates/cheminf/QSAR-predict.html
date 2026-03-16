@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-3">
+        <span class="dot"></span> QSAR Predictor
+      </div>
+      <p class="mb-0 subtle">
+        Select one or more previously built QSAR models to predict the activity of up to <strong>100</strong> chemicals.
+        After prediction, a modified CSV or SDF will download automatically. Predictions are written to
+        <code>ModelName_Prediction</code> column(s). For classification, this is the class label (1 = active/toxic, 0 = inactive/non-toxic).
+        For regression, it’s the predicted continuous value. Empty or invalid SMILES are removed before prediction.
+      </p>
+
+      <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
+        <a href="{{ url_for('toxpro.example_file', format='prediction_csv') }}" class="btn btn-sample btn-sample-csv">
+          Download Prediction Sample CSV
+        </a>
+        <a href="{{ url_for('toxpro.example_file', format='prediction_sdf') }}" class="btn btn-sample btn-sample-sdf">
+          Download Prediction Sample SDF
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Content -->
+<section class="py-5">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+
+      {% if not user_qsar_models %}
+        <p class="mb-0">No QSAR models available. Please use <strong>Cheminformatics → QSAR Builder</strong> to create QSAR model(s).</p>
+      {% else %}
+
+      <form id="qsar-form" action="{{ url_for('cheminf.QSAR_predict', session_id=session_id) if session_id else url_for('cheminf.QSAR_predict') }}" method="post" enctype="multipart/form-data">
+        <div class="row">
+
+          <!-- QSAR model selection -->
+          <div class="col-md-6 mb-3">
+            <label for="model-selection" class="font-weight-600">Select QSAR model:</label>
+            <select id="model-selection"
+                    data-placeholder="Choose or type the model name..."
+                    multiple
+                    class="chosen-select"
+                    name="model-selection">
+              {% for qsar_model in user_qsar_models %}
+                <option value="{{ qsar_model.name }}">{{ qsar_model.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Input method toggle -->
+          <div class="col-md-6 mb-3">
+            <label class="font-weight-600 d-block">Input Method:</label>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" name="input-method" value="file" id="method-file" checked>
+              <label class="form-check-label" for="method-file">Upload CSV/SDF File</label>
+            </div>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" name="input-method" value="text" id="method-text">
+              <label class="form-check-label" for="method-text">Paste SMILES</label>
+            </div>
+          </div>
+
+          <!-- File upload + SMILES column -->
+          <div class="col-md-6 mb-3" id="file-input-section">
+            <label for="predict-file" class="font-weight-600">Select CSV or SDF File:</label>
+            <div class="input-group">
+              <input type="file" class="form-control" name="predict-file" accept=".csv,.sdf">
+              <button type="submit" class="btn btn-cta">Predict</button>
+            </div>
+
+            <small class="text-muted d-block mt-2">
+              SMILES column name in the CSV (default is <code>SMILES</code> if left empty).
+            </small>
+            <input type="text" class="form-control mt-2" name="smiles-column" placeholder="SMILES">
+          </div>
+
+          <!-- SMILES paste area -->
+          <div class="col-md-12 mb-3" id="smiles-text-area" style="display:none;">
+            <label for="smiles-input" class="font-weight-600">Paste up to 100 SMILES (one per line):</label>
+            <textarea class="form-control" name="smiles-input" id="smiles-input" rows="6" placeholder="C1=CC(=C(C=C1Cl)Cl)Cl..."></textarea>
+            <div class="d-flex gap-2 align-items-stretch mt-2">
+              <button type="button" class="btn btn-ghost" onclick="pasteSampleSMILES()">Paste Sample SMILES</button>
+              <button type="submit" class="btn btn-cta">Predict</button>
+            </div>
+          </div>
+
+          <!-- Output file format -->
+          <div class="col-md-6 mt-2" id="file-selection">
+            <h6 class="mb-2">Select Output File Format:</h6>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" name="output-type" value="CSV" id="out-csv" checked>
+              <label class="form-check-label" for="out-csv">CSV</label>
+            </div>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" name="output-type" value="SDF" id="out-sdf">
+              <label class="form-check-label" for="out-sdf">SDF</label>
+            </div>
+          </div>
+
+        </div>
+      </form>
+
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<script type="text/javascript">
+  $(function () {
+    // Chosen init
+    if ($(".chosen-select").chosen) {
+      $(".chosen-select").chosen({ no_results_text: "Oops, no matching results!", width: "100%" });
+    }
+
+    // Toggle input method
+    $('input[name="input-method"]').on('change', function () {
+      if ($(this).val() === 'text') {
+        $('#file-input-section').hide();
+        $('#smiles-text-area').show();
+      } else {
+        $('#file-input-section').show();
+        $('#smiles-text-area').hide();
+      }
+    });
+
+    // Form validation
+    $('#qsar-form').on('submit', function (e) {
+      const inputMethod = $('input[name="input-method"]:checked').val();
+      const selectedModels = $('#model-selection').val();
+
+      if (!selectedModels || selectedModels.length === 0) {
+        alert("Please select at least one QSAR model before submitting.");
+        e.preventDefault();
+        return;
+      }
+
+      if (inputMethod === 'text') {
+        const smilesText = ($('#smiles-input').val() || '').trim();
+        if (!smilesText) {
+          alert("Please paste at least one SMILES before submitting.");
+          e.preventDefault();
+        }
+      }
+    });
+  });
+
+  function pasteSampleSMILES() {
+    const sample = "C1=CC(=CC=C1C(=C(Cl)Cl)C2=CC=C(C=C2)Cl)Cl\nC1=CC(=C(C=C1Cl)Cl)Cl";
+    $('#smiles-input').val(sample);
+  }
+</script>
+
+{% endblock %}

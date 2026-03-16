@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="py-4">
+  <div class="container-fluid curated-wrap">
+    <h3 class="mb-3">Curated Datasets</h3>
+
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 curated-table">
+        <thead class="thead-light text-center font-weight-bold">
+          <tr>
+            <th scope="col" style="width: 20%;">Dataset Name</th>
+            <th scope="col" class="col-compounds" style="width: 10%;">Total # of Compounds</th>
+            <th scope="col" style="width: 18%;">Data Type</th>
+            <th scope="col" style="width: 14%;">Dataset Source</th>
+            <th scope="col" style="width: 38%;">Dataset Description</th>
+          </tr>
+        </thead>
+        <tbody class="text-center">
+          <tr>
+            <td>Acute toxicity</td>
+            <td>7332</td>
+            <td>log10 mol/kg-bw</td>
+            <td><a href="https://ehp.niehs.nih.gov/doi/10.1289/ehp.0800471" class="pi-alink-color" target="_blank">Zhu et al.</a></td>
+            <td class="text-left">Used publicly available rat oral acute toxicity data, with LD₅₀ (Rat oral) values classified into toxicity categories (e.g., high, moderate, low) according to Globally Harmonized System (GHS) thresholds.</td>
+          </tr>
+          <tr>
+            <td>Aquatic toxicity</td>
+            <td>675</td>
+            <td>-log10 of Conc. (µmol/L)</td>
+            <td><a href="https://academic.oup.com/etc/article-abstract/22/3/466/7769994?redirectedFrom=fulltext" class="pi-alink-color" target="_blank">Klopman et al.</a></td>
+            <td class="text-left">Collected from standardized 96-hour LC₅₀ test data for Pimephales promelas (fathead minnow), sourced from the EPA’s ECOTOX database and additional public toxicology resources.</td>
+          </tr>
+          <tr>
+            <td>BBB<br>(Blood Brain Barrier)</td>
+            <td>438</td>
+            <td>logBB</td>
+            <td><a href="https://doi.org/10.1007/s11095-015-1687-1" class="pi-alink-color" target="_blank">Wang et al.</a></td>
+            <td class="text-left">Compounds with experimental logBB values was compiled and curated using ChemAxon and CASE Ultra tools.</td>
+          </tr>
+          <tr>
+            <td>Bioavailability</td>
+            <td>1141</td>
+            <td>oral bioavailability (%F)</td>
+            <td>
+              <a href="https://link.springer.com/article/10.1007/s11095-013-1222-1" class="pi-alink-color" target="_blank">Kim et al.</a><br>
+              <a href="https://www.sciencedirect.com/science/article/pii/S096808960700764X?via%3Dihub" class="pi-alink-color" target="_blank">Moda et al.</a>
+            </td>
+            <td class="text-left">Compiled across public and literature sources. Chemical structures were standardized, and %F values were harmonized to resolve discrepancies.</td>
+          </tr>
+          <tr>
+            <td>Carcinogenicity</td>
+            <td>342</td>
+            <td>Binary, 0=Non-Carcinogen; 1=Carcinogen</td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.est.3c00648" class="pi-alink-color" target="_blank">Chung et al.</a></td>
+            <td class="text-left">342 unique organic compounds from the EPA’s IRIS database, labeled as carcinogenic or noncarcinogenic based on oral slope factor (OSF), a quantitative measure for oral cancer risk.</td>
+          </tr>
+          <tr>
+            <td>Cosmetics</td>
+            <td>4129</td>
+            <td>Activity_Cosmetics (All chemicals fall under the cosmetic category)</td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.est.3c00648" class="pi-alink-color" target="_blank">Chung et al.</a></td>
+            <td class="text-left">Cosmetic dataset collected from COSMOS Cosmetics Inventory knowledge base.</td>
+          </tr>
+          <tr>
+            <td>DART<br>(Developmental and Reproductive Toxicity)</td>
+            <td>1999</td>
+            <td>Oral Developmental, Inhalation Maternal, ToxRefDB Maternal, Binary Labels (1:Safe; 0: Teratogen)</td>
+            <td>
+              <a href="https://pubs.acs.org/doi/10.1021/acs.est.2c01040" class="pi-alink-color" target="_blank">Ciallella et al.</a><br>
+              <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.2c00824" class="pi-alink-color" target="_blank">Aljarf et al.</a>
+            </td>
+            <td class="text-left">
+              Collected from U.S. EPA’s <i>in vivo</i> prenatal developmental toxicity studies in rats and rabbits based on oral or inhalation studies.  
+              Embryotox dataset was Collected from FDA drug labeling data and literature annotations for known teratogens. Drugs with strong evidence of teratogenicity were classified as positives. Non-teratogenic drugs were chosen from non-reproductive risk categories to avoid mislabeling.
+            </td>
+          </tr>
+          <tr>
+            <td>Drugbank</td>
+            <td>8055</td>
+            <td>Activity_Drugbank (All chemicals fall under the drug category)</td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.est.3c00648" class="pi-alink-color" target="_blank">Chung et al.</a></td>
+            <td class="text-left">Collected from DrugBank database.</td>
+          </tr>
+          <tr>
+            <td>Endocrine disruption</td>
+            <td>2103</td>
+            <td>Agonist, Antagonist, Binding, and Uterotrophic class</td>
+            <td><a href="https://www.laboratoryinvestigation.org/article/S0023-6837(22)00653-5/fulltext" class="pi-alink-color" target="_blank">Ciallella et al.</a></td>
+            <td class="text-left">The data was collected from the Collaborative Estrogen Receptor Activity Prediction Project (CERAPP), which provides <i>in vitro</i> data on estrogen receptor agonism, antagonism, and binding, and from the Estrogenic Activity Database (EADB), which contains <i>in vivo</i> rodent uterotrophic assay data.</td>
+          </tr>
+          <tr>
+            <td>Hepatotoxicity</td>
+            <td>5177</td>
+            <td class="text-left">
+              Several classification endpoints for hepatotoxicity are provided at standard or dose-based thresholds. Activity is the main endpoint. Endpoints labeled H-* represent Human data and PC-* represent Pre-Clinical rat data. The abbreviations used include: CC – clinical chemistry, HC – hepatocellular injury, HT – hepatotoxicity, HB – hepatobiliary injury, and MF – morphological findings.
+            </td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.chemrestox.5b00465" class="pi-alink-color" target="_blank">Mulliner et al.</a></td>
+            <td class="text-left">Compiled from multiple public toxicology databases, including the U.S. FDA’s Liver Toxicity Knowledge Base (LTKB), EMEA, LiverTox, and published scientific literature, with a focus on liver toxicity endpoints in both humans and animals.</td>
+          </tr>
+          <tr>
+            <td>High Production Volume chemicals</td>
+            <td>1672</td>
+            <td>Activity_HPV (All chemicals fall under the HPV category)</td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.est.3c00648" class="pi-alink-color" target="_blank">Chung et al.</a></td>
+            <td class="text-left">U.S. EPA HPV Challenge Program's chemical database was used for collection.</td>
+          </tr>
+          <tr>
+            <td>Httk_ADME_Parameters</td>
+            <td>1449</td>
+            <td>Human CLint (intrinsic clearance) in µL/min/10^6 cells, Human Fu (fraction unbound), Rat CLint (intrinsic clearance) in µL/min/10^6 cells, and Rat Fu (fraction unbound)</td>
+            <td><a href="https://cran.r-project.org/web/packages/httk/index.html" class="pi-alink-color" target="_blank">High-Throughput Toxicokinetics</a></td>
+            <td class="text-left">The HTTK dataset, developed by the U.S. EPA, contains high-throughput toxicokinetic data and models covering pharmaceuticals and environmental chemicals. It includes <i>in vitro</i>measurements like plasma protein binding and hepatic clearance rates, as well as species-specific physiological data such as tissue volumes and blood flow rates.</td>
+          </tr>
+          <tr>
+            <td>Natural products</td>
+            <td>2479</td>
+            <td>Activity_NP (All chemicals fall under the natural product category)</td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.est.3c00648" class="pi-alink-color" target="_blank">Chung et al.</a></td>
+            <td class="text-left">The natural products dataset from the traditional Chinese medicine systems pharmacology database and analysis platform (TCMSP) database, was curated.</td>
+          </tr>
+          <tr>
+            <td>Pesticides</td>
+            <td>1009</td>
+            <td>Activity_Pesticides (All chemicals fall under the pesticide category)</td>
+            <td><a href="https://pubs.acs.org/doi/10.1021/acs.est.3c00648" class="pi-alink-color" target="_blank">Chung et al.</a></td>
+            <td class="text-left">Collected from literature and public databases including U.S. EPA CompTox Chemistry Dashboard.</td>
+          </tr>
+          <tr>
+            <td>Transporter-mediated toxicity</td>
+            <td>10,875</td>
+            <td class="text-left">
+              <strong>Proteins:</strong><br>
+              • P-glycoprotein (P-gp; MDR1)<br>
+              • Breast cancer resistance protein (BCRP)<br>
+              • Multidrug resistance–associated proteins (MRP1, MRP2)<br>
+              • Bile salt export pump (BSEP)<br><br>
+              <strong>Activity values:</strong><br>
+              • Substrate and Inhibitor calls<br>
+              • Evidence of inhibition thresholds.
+            </td>
+            <td>
+              <a href="https://pubs.acs.org/doi/10.1021/acs.molpharmaceut.5c01065" class="pi-alink-color" target="_blank">Daood et&nbsp;al.</a><br>
+              <a href="https://link.springer.com/article/10.1007/s11095-012-0935-x" class="pi-alink-color" target="_blank">Sedykh et&nbsp;al.</a><br>
+              <a href="https://pubs.acs.org/doi/10.1021/acsomega.7b00274" class="pi-alink-color" target="_blank">Zhao et&nbsp;al.</a>
+            </td>
+            <td class="text-left">
+              Consolidates curated transporter data across P-gp, BCRP, MRP1, MRP2, and BSEP. Records were standardized and manually reviewed for cited literature sources, noting details such as cell lines, substrates, substrate concentrations, and positive controls where available. Sources include large-scale ChEMBL bioactivity extractions, PubChem, and Metrabase data. High-confidence entries from the Intestinal Transporter Database are included for MDR1. Substrate/inhibitor calls are harmonized, and inhibition evidence follows study-specific thresholds (10 µM for P-gp/BCRP; 100 µM for BSEP).
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div> <!-- /feature-table -->
+  </div>
+  </div>
+</section>
+
+<style>
+  .curated-wrap { padding-left: 12px; padding-right: 12px; }
+  .curated-table { width: 100%; table-layout: auto; }
+  .curated-table th, .curated-table td { word-break: break-word; }
+  .curated-table .col-compounds { white-space: nowrap; }
+  .curated-table td:nth-child(3),
+  .curated-table td:nth-child(5) { text-align: left !important; }
+  .curated-table td, .curated-table th { padding: .9rem; }
+</style>
+
+{% endblock %}

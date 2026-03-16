@@ -1,0 +1,167 @@
+
+body {
+    background-color: #F0F0F0;
+}
+
+/*.card {*/
+    /*border-color: #151F30;*/
+    /*border-width: 1px;*/
+/*}*/
+
+/* add a little margin for some rows */
+.top-buffer {
+    margin-top:20px;
+}
+
+.btn-padding {
+    margin-top:10px;
+}
+
+.top-padding {
+    margin-top:10px;
+}
+
+btm-padding {
+    margin-bottom: 10px;
+}
+
+
+.panel-primary {
+    color: #151F30;
+    border-color: #151F30;
+    background-color: #F0F0F0;
+}
+
+.panel-primary .panel-heading{
+    background-color: #151F30;
+    color: #F0F0F0;
+}
+
+.btn-primary {
+    background-color: #151F30;
+    border: none;
+}
+
+.btn-info {
+    background-color: #0593A2;
+    border: none;
+}
+
+.btn-info:hover {
+    background-color: #151F30;
+    border: none;
+}
+
+.btn-info:active {
+    background-color: #0593A2;
+}
+
+.btn-info:focus {
+    background-color: #0593A2;
+}
+
+.btn-primary:hover {
+    background-color: #0593A2;
+    border: #151F30;
+}
+
+.btn-primary:active {
+    background-color: #F0F0F0;
+    color: #103778;
+    border: none;
+}
+
+.btn-primary:focus {
+    background-color: #F0F0F0;
+    color: #103778;
+    border: none;
+}
+
+.navbar-brand {
+    color: #151F30;
+    font-size: 25px;
+}
+
+.navbar {
+    color: #0593A2;
+    font-size: 20px;
+}
+
+/* for the home page */
+
+.toxpro-overview h3 {
+    color:#151F30;
+    text-align: center
+}
+
+.toxpro-overview p {
+    color:#151F30;
+    text-align: center
+}
+
+
+/* profile page */
+
+.profile {
+
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+/* opimizer page */
+
+.optimizer {
+    padding-left: 50px;
+    padding-right: 50px;
+    margin-bottom: 10em;
+}
+
+/* for flashed messages */
+.alert-info {
+    background-color: #0593A2;
+    border: none;
+    color: white;
+}
+
+#divLoading
+{
+display : none;
+}
+#divLoading.show
+{
+display : block;
+position : fixed;
+z-index: 100;
+background-image : url('/static/img/loading-bar.gif');
+background-color:#666;
+opacity : 0.4;
+background-repeat : no-repeat;
+background-position : center;
+left : 0;
+bottom : 0;
+right : 0;
+top : 0;
+}
+#loadinggif.show
+{
+left : 50%;
+top : 50%;
+position : absolute;
+z-index : 101;
+width : 32px;
+height : 32px;
+margin-left : -16px;
+margin-top : -16px;
+}
+
+table.dataTable tbody tr {
+  background-color: #ffffff;
+}
+
+.cmp-active {
+  color:  rgba(255, 0, 0, 0.5)
+}
+
+.cmp-inactive {
+  color:  rgba(0, 0, 255, 0.5)
+}

@@ -1,0 +1,46 @@
+<div class="row pt-4">
+  <div class="col-12">
+    <div class="tv-card p-4">
+      <div class="section-title mb-3">
+        <span class="dot"></span> Jobs
+      </div>
+
+      <div class="feature-table">
+        <div class="thead">Task Queue</div>
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Task ID</th>
+              <th>Description</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in user.get_tasks_in_progress() %}
+              <tr>
+                <td>{{ task.id }}</td>
+                <td class="text-left">{{ task.description }}</td>
+                <td>
+                  {% set status = task.get_progress() %}
+                  {% if status == 'Complete' %}
+                    <span class="badge bg-success">{{ status }}</span>
+                  {% elif status == 'Queued' %}
+                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                  {% elif 'error' in status|lower %}
+                    <span class="badge bg-danger">{{ status }}</span>
+                  {% else %}
+                    <span class="badge bg-info text-dark">{{ status }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-muted"><em>No jobs in progress</em></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

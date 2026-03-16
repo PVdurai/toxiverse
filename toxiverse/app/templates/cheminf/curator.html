@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block content %}
+
+  {# Auto-refresh every 5s ONLY while Curator tasks are running #}
+  {% if task_in_progress %}
+  <div class="alert alert-info mt-2" role="status" aria-live="polite">
+    A “Curator” task is in progress. This page will refresh every 5 seconds until it completes.
+  </div>
+  <script>
+    setTimeout(function () { window.location.reload(); }, 5000);
+  </script>
+  {% endif %}
+
+  {# Disable the form while a Curator task is running #}
+  {% set disabled = 'disabled' if task_in_progress else '' %}
+
+  <!-- Hero section -->
+  <section class="hero">
+    <div class="container">
+      <div class="tv-card p-4 p-md-5">
+        <div class="section-title mb-3">
+          <span class="dot"></span> Chemical Curator
+        </div>
+        <p class="mb-3">
+          Proper chemical curation is a crucial step in Quantitative Structure-Activity Relationship (QSAR) development.
+          This module cleans and prepares chemical structures using the following steps. The curated dataset will be
+          available in the “Select Dataset” dropdown below. If <em>Create New Dataset</em> is selected, the curated file will
+          appear with the name <code>&lt;input_filename&gt;_curated</code>:
+        </p>
+        <ol class="mb-0">
+          <li>Check and clean chemical structures.</li>
+          <li>Standardize chemical representation (e.g., update valencies, remove charges).</li>
+          <li>Strip salts and solvents; remove mixtures by retaining the parent non-salt/non-solvent component.</li>
+          <li>Merge or remove duplicate structures.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Form section -->
+  <section class="py-5">
+    <div class="container">
+      <div class="tv-card p-4 p-md-5">
+
+        {% if not user_datasets %}
+          <p class="mb-0">
+            Please upload a dataset for chemical curation via
+            <strong>Cheminformatics → Upload or Retrieve Dataset</strong>.
+          </p>
+        {% else %}
+
+        <form id="curator-form" action="{{ url_for('cheminf.curator') }}" method="post" enctype="multipart/form-data">
+          <fieldset {{ disabled }}>
+            <div class="row text-muted">
+              <!-- Select dataset -->
+              <div class="col-lg-4 mb-3">
+                <h6 class="mb-2">Select dataset:</h6>
+                <select class="form-control" id="dataset-selection" name="dataset-selection" {{ disabled }} required>
+                  {% for dataset in user_datasets %}
+                    <option value="{{ dataset.dataset_name }}">{{ dataset.dataset_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Duplicate handling -->
+              <div class="col-lg-4 mb-3">
+                <h6 class="mb-2">Select how to handle duplicates:</h6>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="dup-higher" name="duplicate-selection" value="higher" checked {{ disabled }}>
+                  <label class="form-check-label" for="dup-higher">Merge and take <strong>highest</strong> activity</label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="dup-lower" name="duplicate-selection" value="lower" {{ disabled }}>
+                  <label class="form-check-label" for="dup-lower">Merge and take <strong>lowest</strong> activity</label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="dup-average" name="duplicate-selection" value="average" {{ disabled }}>
+                  <label class="form-check-label" for="dup-average">Merge and take <strong>average</strong> activity</label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="dup-remove" name="duplicate-selection" value="remove" {{ disabled }}>
+                  <label class="form-check-label" for="dup-remove">Remove all</label>
+                </div>
+              </div>
+
+              <!-- Create or replace -->
+              <div class="col-lg-4 mb-3">
+                <h6 class="mb-2">Replace dataset or create new:</h6>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="mode-replace" name="create-or-replace" value="replace" checked {{ disabled }}>
+                  <label class="form-check-label" for="mode-replace">Replace dataset</label>
+                </div>
+                <div class="form-check">
+                  <input type="radio" class="form-check-input" id="mode-create" name="create-or-replace" value="create" {{ disabled }}>
+                  <label class="form-check-label" for="mode-create">Create new dataset</label>
+                </div>
+                <small id="replace-hint" class="form-text text-muted mt-2" style="display:none;">
+                  You chose <strong>Replace dataset</strong>. The original dataset will be overwritten.
+                </small>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-12 pt-4 pb-2 text-center">
+                <button id="curate-btn" type="submit" class="btn btn-cta" {{ disabled }}>
+                  {% if task_in_progress %}Working…{% else %}Curate{% endif %}
+                </button>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <script>
+    (function(){
+      function updateReplaceHint() {
+        var replaceSelected = document.getElementById('mode-replace')?.checked;
+        var hint = document.getElementById('replace-hint');
+        if (hint) hint.style.display = replaceSelected ? 'block' : 'none';
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        updateReplaceHint();
+        var radios = document.querySelectorAll('input[name="create-or-replace"]');
+        radios.forEach(function(r){ r.addEventListener('change', updateReplaceHint); });
+
+        var form = document.getElementById('curator-form');
+        var btn = document.getElementById('curate-btn');
+        if (form && btn) {
+          form.addEventListener('submit', function(){
+            btn.disabled = true;
+            btn.textContent = 'Working…';
+          });
+        }
+      });
+    })();
+  </script>
+
+{% endblock %}

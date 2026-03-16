@@ -1,0 +1,992 @@
+import requests
+import os
+import pandas as pd
+from itertools import zip_longest
+from sklearn.decomposition import PCA
+import matplotlib as mpl
+import matplotlib.colors as c
+import numpy as np
+from io import BytesIO
+import seaborn as sns
+from app.config import Config
+from flask import flash
+from typing import List
+import glob
+import matplotlib
+import matplotlib.pyplot as plt
+
+from sklearn.feature_selection import mutual_info_classif
+import os
+import glob
+import requests
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from io import StringIO
+from typing import List
+from itertools import zip_longest
+
+from rdkit import Chem
+from rdkit.Chem import AllChem, DataStructs, rdMolDescriptors
+from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
+from scipy.spatial.distance import pdist, squareform
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+from sklearn.model_selection import train_test_split
+
+import joblib
+
+import matplotlib.pyplot as plt
+
+from sklearn.feature_selection import mutual_info_classif
+
+
+# Path to the project root directory
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+TMP_FILES_DIR = os.path.join(ROOT_DIR, 'data/tmp')
+
+def bioassay_post(identifier_list, identifier='cid', output='csv'):
+    identifier_list = list(map(str, identifier_list))
+    url = f'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/{identifier}/assaysummary/{output}'
+    headers = {'Content-Type': 'multipart/form-data'}
+    data = {identifier: ','.join(identifier_list)}
+    response = requests.post(url, data=data)
+    return response
+
+def grouper(iterable, n, fillvalue=None):
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
+
+
+
+def make_bioprofile_matrix_new(df, min_actives=0, merge_dups_by='max'):
+    """ will turn assay data file into wide (i.e., a matrix) format but performs all filtering in
+        long format to save RAM"""
+
+    df['Activity Outcome'] = df['Activity Outcome'] \
+        .replace('Inactive', -1) \
+        .replace('Active', 1) \
+        .replace('Probe', 1) \
+        .replace('Inconclusive', 0) \
+        .replace('Unspecified', 0) \
+        .fillna(0)
+
+    df['Activity Transformed'] = df.groupby(['CID', 'AID'])['Activity Outcome'].transform(merge_dups_by)
+
+    # for the num actives count, a CID is considered active
+    # for a given AID if it has an active response for any of its
+    # bioactivity outcomes for that AID.
+    df['Activity Outcome Max'] = df.groupby(['CID', 'AID'])['Activity Outcome'].transform('max')
+
+    # take only one response for a
+    # CID/AID pair, ie., the transformed
+    # bioactivity value
+    df = df.drop_duplicates(['CID', 'AID', 'Activity Transformed'])
+    # CID/AID/Bioactivity Outcome should be unique
+    # just like CID/AID/Bioactivity Outcome Maz
+    df_tmp = df.groupby('AID')['Activity Outcome Max'].apply(lambda x: (x == 1).sum()).reset_index(name='Num_Active')
+    df = df.merge(df_tmp)
+    df = df[df.Num_Active >= min_actives]
+
+    # turn into wide format
+    matrix = df.pivot(index='CID', columns='AID', values='Activity Transformed').fillna(0)
+    matrix.reset_index(inplace=True)
+
+    if 'CID' not in matrix.columns:
+        print("Error: 'CID' matrix column is missing.")
+
+    return matrix
+
+def make_bioprofile_matrix(df):
+    # turn into wide format
+    matrix = df.pivot(index='CID', columns='AID', values='Activity_Transformed').fillna(0)
+    return matrix
+
+
+def make_matrix(data_file, min_actives=0, merge_dups_by='max', outfile='bioprofile_matrix.csv'):
+    df = pd.read_csv(data_file, usecols=['AID', 'CID', 'Activity Outcome'])
+    df['Activity Outcome'] = df['Activity Outcome']\
+                                     .replace('Inactive', -1)\
+                                     .replace('Active', 1)\
+                                     .replace('Probe', 1)\
+                                     .replace('Inconclusive', 0)\
+                                     .replace('Unspecified', 0)\
+                                     .fillna(0)
+    df['Activity Transformed'] = df.groupby(['CID', 'AID'])['Activity Outcome'].transform(merge_dups_by)
+    df['Activity Outcome Max'] = df.groupby(['CID', 'AID'])['Activity Outcome'].transform('max')
+    df = df.drop_duplicates(['CID', 'AID', 'Activity Transformed'])
+    df_tmp = df.groupby('AID')['Activity Outcome Max'].apply(lambda x: (x == 1).sum()).reset_index(name='Num_Active')
+    df = df.merge(df_tmp)
+    df = df[df.Num_Active >= min_actives]
+    matrix = df.pivot(index='CID', columns='AID', values='Activity Transformed').fillna(0)
+    matrix.to_csv(outfile)
+    return matrix
+
+def generate_bioprofile_new(identifier_list, identifier='cid', chunk=False):
+
+    outfile = Config.BIOASSAY_OUT
+
+    num_compounds = len(identifier_list)
+
+    # check to see whether
+    # the list should be queried
+    # in chunks of data or
+    # processed as a whole
+    if not chunk:
+        chunk_size = num_compounds
+    else:
+        chunk_size = chunk
+
+    counter = 0
+
+    # f = open(outfile, 'w')
+    f = open(outfile, 'w', encoding='utf-8')
+    header_written = False
+
+    for gp in grouper(identifier_list, chunk_size):
+        batch = [cid for cid in gp if cid]
+        response = bioassay_post(batch, identifier=identifier, output='csv')
+
+        if response.status_code == 200:
+            text = response.text
+            if not header_written:
+                f.write(text)
+                header_written = True
+            else:
+                header = text.split('\n')[0]
+                text = text.replace(header, '')
+                f.write(text)
+            counter = counter + len(batch)
+            print("Retrieved data for {} out of {} compounds.".format(counter, num_compounds))
+        else:
+            f.close()
+            os.remove('data/assay_data.csv')
+            print("Error: {}".format(response.status_code))
+            return
+    f.close()
+
+    df = pd.read_csv(outfile)
+    os.remove(outfile)
+    return df
+
+def generate_bioprofile(dataset_name, identifier_list, identifier='cid', chunk=False):
+    num_compounds = len(identifier_list)
+
+    # check to see whether the list should be queried
+    # in chunks of data or processed as a wholeI put
+    if not chunk:
+        chunk_size = num_compounds
+    else:
+        chunk_size = chunk
+
+    outfile = Config.BIOASSAY_OUT
+    f = open(outfile, 'w', encoding='utf-8')
+    header_written = False
+
+    for gp in grouper(identifier_list, chunk_size):
+        batch = [cid for cid in gp if cid]
+        response = bioassay_post(batch, identifier=identifier, output='csv')
+
+        if response.status_code == 200:
+            text = response.text
+            if not header_written:
+                f.write(text)
+                header_written = True
+            else:
+                header = text.split('\n')[0]
+                text = text.replace(header, '')
+                f.write(text)
+        else:
+            continue
+    f.close()
+
+    df = pd.read_csv(outfile)
+    os.remove(outfile)
+    return df
+
+def bioprofile(identifier_list, identifier='cid', outfile='bioprofile_long.csv', chunk=False):
+    num_compounds = len(identifier_list)
+    chunk_size = num_compounds if not chunk else chunk
+    counter = 0
+    f = open(outfile, 'w', encoding='utf-8')
+    header_written = False
+    for gp in grouper(identifier_list, chunk_size):
+        batch = [cid for cid in gp if cid]
+        response = bioassay_post(batch, identifier=identifier, output='csv')
+        if response.status_code == 200:
+            text = response.text
+            if not header_written:
+                f.write(text)
+                header_written = True
+            else:
+                header = text.split('\n')[0]
+                text = text.replace(header, '')
+                f.write(text)
+            counter += len(batch)
+            print(f"Retrieved data for {counter} out of {num_compounds} compounds.")
+        else:
+            f.close()
+            print(f"Error: {response.status_code}")
+            return
+    f.close()
+
+
+def confusion_matrix(df, activity_class):
+    """ this function calculates the confusion matrix for an assay, toxicity pair """
+    df[activity_class] = pd.to_numeric(df[activity_class], errors='coerce')
+    df = df[df[activity_class].notnull()]
+
+    tps = ((df[activity_class] == 1) & (df.Activity_Transformed == 1)).sum()
+    fps = ((df[activity_class] == 0) & (df.Activity_Transformed == 1)).sum()
+    tns = ((df[activity_class] == 0) & (df.Activity_Transformed == 0)).sum()
+    fns = ((df[activity_class] == 1) & (df.Activity_Transformed == 0)).sum()
+
+    return tps, fps, tns, fns
+
+
+def render_bioprofile(profile, dataset_type):
+    med = (
+        profile[['CID', 'TOXICITY']]
+        .drop_duplicates()
+        ['TOXICITY']
+        .median()
+    )
+
+    if dataset_type == 'Median':
+        profile['TOXICITY_copy'] = profile['TOXICITY'].copy()
+        profile.loc[profile['TOXICITY'] < med, 'TOXICITY_copy'] = 1
+        profile.loc[profile['TOXICITY'] >= med, 'TOXICITY_copy'] = 0
+        profile['TOXICITY'] = profile['TOXICITY_copy']
+
+    elif dataset_type == 'Other':
+        profile['TOXICITY_copy'] = profile['TOXICITY'].copy()
+        profile.loc[profile['TOXICITY'] < med, 'TOXICITY_copy'] = 0
+        profile.loc[profile['TOXICITY'] >= med, 'TOXICITY_copy'] = 1
+        profile['TOXICITY'] = profile['TOXICITY_copy']
+
+    elif dataset_type == 'Binary':
+        profile['TOXICITY_copy'] = profile['TOXICITY'].copy()
+        profile.loc[profile['TOXICITY'] < med, 'TOXICITY_copy'] = 0
+        profile.loc[profile['TOXICITY'] >= med, 'TOXICITY_copy'] = 1
+        profile['TOXICITY'] = profile['TOXICITY_copy']
+
+    matrix = (
+        profile.groupby('AID')
+        .apply(lambda x: confusion_matrix(x, 'TOXICITY_copy'))
+        .apply(pd.Series)
+        .set_axis(['TP', 'FP', 'TN', 'FN'], axis=1)
+        .reset_index()
+        .sort_values('TP', ascending=False)
+    )
+    matrix['PPV'] = matrix.TP / (matrix.TP + matrix.FP)
+    matrix['Sensitivity'] = matrix.TP / (matrix.TP + matrix.FN)
+
+    profile = profile.pivot(index='CID', columns='AID', values='Activity_Transformed').fillna(0)
+    tmp = matrix.set_index('AID')['PPV']
+    tmp = tmp[profile.columns]
+    supervised_profile = profile.loc[:, tmp > 0.6]
+    supervised_profile = supervised_profile.fillna(0)
+
+    return supervised_profile
+
+
+def get_pca(supervised_profile, profile):
+    pca = PCA(n_components=3).fit_transform(supervised_profile)
+    pca = pd.DataFrame(pca, index=supervised_profile.index, columns=['PCA1', 'PCA2', 'PCA3'])
+    y = profile[['CID', 'TOXICITY']].drop_duplicates().set_index('CID')
+    pca = pd.merge(pca.join(y), profile, on='CID', how='inner')
+
+    return pca
+
+
+# Use a non-interactive backend
+matplotlib.use('Agg')
+def get_heat_map(matrix, output_file='clustermap.png'):
+    heatmap = sns.clustermap(
+        matrix,
+        cmap='coolwarm',
+        cbar_kws={'orientation': 'horizontal', 'fraction': 0.046, 'pad': 0.04}
+    )
+
+    heatmap.cax.set_position([0.3, 1.02, 0.4, 0.02])
+
+    cbar = heatmap.ax_heatmap.collections[0].colorbar
+    cbar.set_ticks([-1, 0, 1])
+    cbar.set_ticklabels(['Inactive', 'Inconclusive', 'Active'])
+
+    heatmap.ax_heatmap.set_xlabel('AID', fontsize=12)
+    heatmap.ax_heatmap.set_ylabel('CID', fontsize=12)
+
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
+    
+    return heatmap.fig
+
+
+def get_active_bioassays(pca):
+    bioassay = os.getenv('BIOASSAYS')
+    bio_info = pd.read_table(bioassay)
+
+    biodict = dict(zip(bio_info['AID'], bio_info['BioAssay Name']))
+    pca1 = pca.copy()
+    pca1['BioAssay Name'] = pca1['AID'].map(biodict)
+
+    table = pca1.groupby(['AID', 'BioAssay Name'])['Activity_Transformed'].value_counts().unstack(fill_value=0)
+    table = table.rename(columns={-1.0: 'Inactive', 0.0: 'Inconclusive', 1.0: 'Active'})
+    table['Active rate'] = table['Active'] / (table['Active'] + table['Inactive'])
+    table1 = table.loc[table['Inactive'] + table['Active'] > 10]
+    table1 = table1.loc[table1['Inconclusive'] < (table1['Active'] + table1['Inactive'])].sort_values(by='Active rate',
+                                                                                                      ascending=False)
+    table1 = table1.reset_index()
+
+    return table1
+
+
+
+
+def select_top_assays(matrix_file='bioprofile_matrix.csv', output_file='SelectedAssays.csv', top_n=5):
+    # Load the dataset
+    df = pd.read_csv(matrix_file, index_col=0)
+    
+    # Convert -1 (Inactive) to 0 for binary classification
+    df_binary = df.replace({-1: 0})
+    
+    # Drop AIDs with only one unique value (no variation)
+    df_filtered = df_binary.loc[:, df_binary.nunique() > 1]
+
+    # Compute Mutual Information Scores for each AID
+    X = df_filtered.T  # AIDs as rows, CIDs as columns
+    y = (df_filtered.sum(axis=1) > 0).astype(int)  # Binary target (active vs inactive)
+    
+    mi_scores = mutual_info_classif(X.T, y, discrete_features=True)
+
+    # Convert scores to dictionary and select top AIDs
+    mi_dict = dict(zip(df_filtered.columns, mi_scores))
+    top_aids = sorted(mi_dict, key=mi_dict.get, reverse=True)[:top_n]
+
+    # Save selected AIDs to file
+    with open(output_file, 'w') as f:
+        for aid in top_aids:
+            f.write(f"{aid}\n")
+
+    return top_aids
+
+
+# Function to get raw bioactivity data with enhanced error handling
+def get_raw_bioactivity_data(aid: int):
+    url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/assay/aid/{aid}/concise/csv"
+    try:
+        r = requests.get(url, timeout=10)
+        r.raise_for_status()
+        s = StringIO(r.text)
+        df = pd.read_csv(s)
+        if df.empty:
+            return None, f"No data found for the given AID: {aid}."
+        return df[['CID', 'Activity Outcome']], None
+    except requests.exceptions.RequestException as e:
+        return None, f"Request error for AID {aid}: {e}"
+
+# Function to clean bioactivity data
+def clean_bioactivity_frame(df, aid):
+    df['Activity Outcome'] = df['Activity Outcome'] \
+                            .replace({'Inactive': 0, 'Active': 1, 'Probe': 1, 
+                                      'Inconclusive': np.nan, 'Unspecified': np.nan})
+    df = df.dropna(subset=['Activity Outcome'])
+    if df.empty:
+        return None, f"No valid activity outcomes after cleaning for AID {aid}."
+    if not df['Activity Outcome'].isin([1]).any():
+        return None, f"No active chemicals found in the AID {aid}."
+    df = df.sort_values('Activity Outcome').drop_duplicates('CID', keep='last')
+    df['Activity Outcome'] = df['Activity Outcome'].astype(int)
+    return df, None
+
+
+# Function to fetch InChI for a list of CIDs with smaller batching for large lists
+def get_inchi_from_cids(cids: List, batch_size: int =  1000):
+    url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/property/InChI/CSV'
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    all_data = []
+
+    try:
+        for i in range(0, len(cids), batch_size):
+            batch = cids[i:i+batch_size]
+            data = {'cid': ','.join(map(str, batch))}
+            print(f"Processing batch {i//batch_size + 1}: {len(batch)} compounds")  # Debugging info
+            r = requests.post(url, data=data, headers=headers, timeout=10)
+            r.raise_for_status()
+            df = pd.read_csv(StringIO(r.text))
+            all_data.append(df)
+        if not all_data:
+            return None, "No InChI data retrieved."
+        return pd.concat(all_data, ignore_index=True), None
+    except requests.exceptions.RequestException as e:
+        return None, f"Request error while fetching InChI data: {e}"
+# Function to import PubChem data with comprehensive error handling
+def import_pubchem_aid(aid: int):
+    # Step 1: Fetch raw bioactivity data
+    raw_data, error = get_raw_bioactivity_data(aid)
+    if error:
+        return None, error  # Removed internal print
+    print("Raw bioactivity data fetched successfully.")
+    
+    # Check if there are any Active or Probe compounds
+    if not raw_data['Activity Outcome'].isin(['Active', 'Probe']).any():
+        return None, f"No actives found in the AID {aid}."  # Removed internal print
+    
+    missing_values = raw_data['Activity Outcome'].isnull().sum()
+    print(f"Missing values in 'Activity Outcome': {missing_values}")
+    
+    print("Unique values in 'Activity Outcome':", raw_data['Activity Outcome'].unique())
+
+    # Step 2: Clean the bioactivity data
+    bioactivity, clean_error = clean_bioactivity_frame(raw_data, aid)
+    if clean_error:
+        return None, clean_error  # Removed internal print
+    print("Bioactivity data cleaned successfully.")
+
+    # Step 3: Fetch InChI data for CIDs
+    cids = bioactivity['CID'].dropna().astype(int).tolist()
+    if not cids:
+        return None, "No CIDs available to fetch InChI data."  # Removed internal print
+    print(f"Fetching InChI data for {len(cids)} compounds...")
+
+    inchi_data, inchi_error = get_inchi_from_cids(cids)
+    if inchi_error:
+        return None, inchi_error  # Removed internal print
+    print("InChI data fetched successfully.")
+
+    # Step 4: Merge bioactivity and InChI data
+    result = pd.merge(inchi_data, bioactivity, on='CID', how='inner')
+    if result.empty:
+        return None, "No matching CIDs found between bioactivity and InChI data."  # Removed internal print
+    
+    result = result.rename(columns={
+        'CID': 'compound_id',
+        'InChI': 'inchi',
+        'Activity Outcome': 'activity'
+    })
+    return result, None
+
+def fetch_and_save_aid_data(selected_aid_file='SelectedAssays.csv'):
+    # Read selected AIDs from file
+    with open(selected_aid_file, 'r') as f:
+        aid_list = [int(line.strip()) for line in f.readlines()]
+    
+    for aid in aid_list:
+        print(f"Processing AID: {aid}")
+        
+        # Fetch data for the given AID
+        result, error = import_pubchem_aid(aid)
+        
+        if error:
+            print(f"Skipping AID {aid} due to error: {error}")
+            continue
+        output_file = os.path.join(TMP_FILES_DIR, f"AID{aid}_chemicals.csv")  # Input file path
+
+        # Save the result in a file
+        # output_file = f"AID{aid}_chemicals.csv"
+        result.to_csv(output_file, index=False)
+        print(f"Saved data for AID {aid} to {output_file}")
+        
+        curate_chemicals(aid)
+
+
+def get_chemical_diversity(inchis):
+    """Calculate diversity scores using Morgan fingerprints and Tanimoto similarity."""
+    
+    fingerprints = []
+    valid_inchis = []
+    
+    for inchi in inchis:
+        mol = Chem.MolFromInchi(inchi)
+        if mol:
+            fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+            fingerprints.append(fp)
+            valid_inchis.append(inchi)
+    
+    num_mols = len(fingerprints)
+    if num_mols == 0:
+        return {}  # No valid molecules
+
+    # Compute pairwise Tanimoto similarities using RDKit’s built-in method
+    tanimoto_matrix = np.zeros((num_mols, num_mols))
+
+    for i in range(num_mols):
+        tanimoto_matrix[i, i+1:] = DataStructs.BulkTanimotoSimilarity(fingerprints[i], fingerprints[i+1:])
+        tanimoto_matrix[i+1:, i] = tanimoto_matrix[i, i+1:]  # Mirror the matrix
+
+    # Compute diversity scores as 1 - max similarity per molecule
+    diversity_scores = {inchi: 1 - max(tanimoto_matrix[i]) for i, inchi in enumerate(valid_inchis)}
+
+    return diversity_scores
+
+def curate_chemicals(aid):
+    """Curate chemicals by removing duplicates, keeping actives, and selecting diverse inactives."""
+   
+    input_file = os.path.join(TMP_FILES_DIR, f"AID{aid}_chemicals.csv")  # Input file path
+    output_file = os.path.join(TMP_FILES_DIR, f"AID{aid}_diverse.csv")  # Output file path
+    try:
+        df = pd.read_csv(input_file)
+    except FileNotFoundError:
+        print(f"Error: {input_file} not found.")
+        return
+
+    # Remove duplicate InChI entries
+    df = df.drop_duplicates(subset=['inchi'])
+
+    # Separate active and inactive chemicals
+    active_df = df[df['activity'] == 1]
+    inactive_df = df[df['activity'] == 0]
+
+    # Sanitize molecules for both active and inactive chemicals
+    def sanitize_molecule(inchi):
+        mol = Chem.MolFromInchi(inchi)
+        if mol:
+            try:
+                Chem.SanitizeMol(mol)
+                return mol
+            except ValueError:
+                print(f"Warning: Molecule from InChI {inchi} could not be sanitized. Skipping.")
+                return None
+        else:
+            print(f"Warning: Invalid InChI {inchi}. Skipping.")
+            return None
+
+    # Apply sanitization to InChI column
+    active_df['mol'] = active_df['inchi'].apply(sanitize_molecule)
+    inactive_df['mol'] = inactive_df['inchi'].apply(sanitize_molecule)
+
+    # Filter out rows with invalid molecules (sanitization failed)
+    active_df = active_df[active_df['mol'].notnull()]
+    inactive_df = inactive_df[inactive_df['mol'].notnull()]
+
+    # If the total number is already ≤ 300, save and return
+    if len(df) <= 300:
+        df.to_csv(output_file, index=False)
+        print(f"Saved curated chemicals to {output_file} (no need for further selection).")
+        return
+
+    # Select up to 150 diverse actives
+    if len(active_df) > 150:
+        diversity_scores = get_chemical_diversity(active_df['inchi'].tolist())
+        active_df['diversity_score'] = active_df['inchi'].map(diversity_scores)
+        active_df = active_df.nlargest(150, 'diversity_score')
+    else:
+        active_df = active_df.copy()
+
+    # Select diverse inactives to reach a total of 300 chemicals
+    num_needed = 300 - len(active_df)
+    if num_needed > 0 and not inactive_df.empty:
+        diversity_scores = get_chemical_diversity(inactive_df['inchi'].tolist())
+        inactive_df['diversity_score'] = inactive_df['inchi'].map(diversity_scores)
+        most_diverse_inactives = inactive_df.nlargest(num_needed, 'diversity_score')
+        curated_df = pd.concat([active_df, most_diverse_inactives])
+    else:
+        curated_df = active_df
+
+    # Save curated dataset
+    curated_df = curated_df.drop(columns=['mol'], errors='ignore')
+    curated_df.to_csv(output_file, index=False)
+    print(f"Saved curated chemicals to {output_file}")
+
+def generate_rf_model_and_metrics(file_path, max_depth=10, class_weight='balanced', n_estimators=100):
+    # Load the curated dataset
+    df = pd.read_csv(file_path)
+    
+    # Generate ECFP6 fingerprints for each compound
+    fingerprints = []
+    for inchi in df['inchi']:
+        mol = Chem.MolFromInchi(inchi)
+        if mol:
+            fp = AllChem.GetMorganFingerprintAsBitVect(mol, 3, nBits=2048)
+            arr = np.zeros((1,))
+            DataStructs.ConvertToNumpyArray(fp, arr)
+            fingerprints.append(arr)
+        else:
+            fingerprints.append(np.zeros((2048,)))
+    
+    X = np.array(fingerprints)
+    y = df['activity'].values
+    
+    # Split the data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Initialize the Random Forest model
+    rf = RandomForestClassifier(max_depth=max_depth, class_weight=class_weight, n_estimators=n_estimators, random_state=42)
+    
+    # Train the model
+    rf.fit(X_train, y_train)
+    
+    # Make predictions
+    y_pred = rf.predict(X_test)
+    
+    # Calculate evaluation metrics
+    accuracy = round(accuracy_score(y_test, y_pred), 2)
+    precision = round(precision_score(y_test, y_pred, average='binary'), 2)
+    recall = round(recall_score(y_test, y_pred, average='binary'), 2)
+    f1 = round(f1_score(y_test, y_pred, average='binary'), 2)
+    roc_auc = round(roc_auc_score(y_test, y_pred), 2)
+    
+    # Save the model with "AID{aid}_RF_model.pkl" format
+    # Extract the file name without the full path
+    model_name = os.path.basename(file_path).split('.')[0]
+    model_filename = os.path.join(TMP_FILES_DIR, model_name + ".pkl")
+    joblib.dump(rf, model_filename)
+    print(f"Saved Random Forest model to {model_filename}")
+    
+    # Save the evaluation metrics
+    metrics = {
+        'Model': model_name,
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'roc_auc': roc_auc
+    }
+    
+    metrics_df = pd.DataFrame([metrics])
+    metrics_df.to_csv(file_path, mode='w', header=not os.path.exists(file_path), index=False)
+
+    
+    return metrics
+
+
+def generate_all_rf_models_and_save_metrics(output_file='RF_metrics.csv'):
+    """
+    Generate RF models from CSV files and save the metrics in the temp directory.
+    """
+    # Define the full path for the output file inside the temp directory
+    output_file_path = os.path.join(TMP_FILES_DIR, output_file)
+
+    # Get all files matching AID{aid}_diverse.csv pattern in the temp directory
+    curated_files = glob.glob(os.path.join(TMP_FILES_DIR, 'AID*_diverse.csv'))
+
+    if not curated_files:
+        print("Error: No curated datasets found for training. Ensure AID*_diverse.csv files exist!")
+        return
+
+    all_metrics = []
+
+    for file_path in curated_files:
+        try:
+            print(f"🔄 Training model for: {file_path}")
+            metrics = generate_rf_model_and_metrics(file_path)
+
+            if metrics is not None:
+                all_metrics.append(metrics)
+            else:
+                print(f"⚠️ Warning: No metrics returned for {file_path}. Possible training failure.")
+        except Exception as e:
+            print(f"Error training model for {file_path}: {e}")
+
+    # Convert the metrics to a DataFrame
+    if not all_metrics:
+        print("No valid metrics generated. Check training errors.")
+        return
+
+    metrics_df = pd.DataFrame(all_metrics)
+    metrics_df = metrics_df.sort_values("Model", ascending=True)
+
+    # Save the metrics to CSV inside the temp directory
+    metrics_df.to_csv(output_file_path, index=False)
+    print(f"Saved evaluation metrics to {output_file_path}")
+
+
+ 
+# def generate_all_rf_models_and_save_metrics(output_file='RF_metrics.csv'):
+#     # Get all files matching AID{aid}_diverse.csv pattern in the current directory
+#     curated_files = glob.glob(os.path.join(TMP_FILES_DIR, 'AID*_diverse.csv'))
+    
+#     all_metrics = []
+#     expected_columns = 4  # The correct number of columns expected
+
+#     for file_path in curated_files:
+#         try:
+#             # Read CSV with pandas, enforcing the expected number of columns
+#             df = pd.read_csv(file_path)
+
+#             # Skip the file if it has extra or missing columns
+#             if df.shape[1] != expected_columns:
+#                 print(f"Skipping {file_path} due to incorrect column count ({df.shape[1]} found, expected {expected_columns}).")
+#                 continue
+            
+#             # Process data and generate metrics
+#             metrics = generate_rf_model_and_metrics(file_path)
+
+#             if metrics is not None:  # Ensure only valid results are collected
+#                 all_metrics.append(metrics)
+
+#         except Exception as e:
+#             print(f"Error processing {file_path}: {e}")
+
+#     # Convert collected metrics to DataFrame
+#     if all_metrics:
+#         metrics_df = pd.DataFrame(all_metrics)
+
+#         # Write all data at once (No append mode)
+#         metrics_df.to_csv(output_file, index=False)
+
+#         print(f"Saved evaluation metrics to {output_file}")
+#     else:
+#         print("No valid CSV files found for processing.")
+
+
+
+
+
+
+
+def plot_rf_metrics(metrics_file='RF_metrics.csv'):
+ 
+    # Load the metrics file
+    df = pd.read_csv(metrics_file)
+    
+    if df.empty:
+        print("The metrics file is empty. No data to plot.")
+        return
+    
+    # Set the model names as index
+    df.set_index('Model', inplace=True)
+    
+    # Define metrics to plot
+    metrics = ['accuracy', 'precision', 'recall', 'f1', 'roc_auc']
+    
+    # Create a bar plot
+    ax = df[metrics].plot(kind='bar', figsize=(12, 6), colormap='viridis', edgecolor='black')
+    
+    plt.title("Performance Metrics of Random Forest Models", fontsize=14)
+    plt.xlabel("Model", fontsize=12)
+    plt.ylabel("Score", fontsize=12)
+    plt.xticks(rotation=45, ha='right')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    
+    # Move the legend outside the plot
+    plt.legend(title="Metrics", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    # Display values above the bars
+    for p in ax.patches:
+        height = p.get_height()
+        if not pd.isna(height):
+            ax.annotate(f"{height:.2f}",
+                        (p.get_x() + p.get_width() / 2., height),
+                        ha='center', va='bottom', fontsize=10, color='black', fontweight='bold', rotation=90)
+    
+    # Adjust layout to prevent clipping
+    plt.tight_layout()
+    RF_metrics_plot = os.path.join(TMP_FILES_DIR, 'RF_metrics_plot.png')
+    # Save the plot as an image
+    plt.savefig(RF_metrics_plot, dpi=300, bbox_inches='tight')
+    plt.show()
+    
+
+def filter_selected_aids(matrix_file='bioprofile_matrix.csv', output_file='Selected_bioprofile_matrix.csv'):
+    """
+    Filters the bioprofile matrix to include only AIDs for which we have RF models.
+    
+    Parameters:
+    matrix_file (str): Path to the bioprofile matrix file.
+    output_file (str): Path to save the filtered bioprofile matrix.
+    
+    Returns:
+    selected_df (DataFrame): The filtered matrix.
+    """
+    # matrix_file = os.path.join(TMP_FILES_DIR, 'bioprofile_matrix.csv')
+
+    try:
+        # Load the bioprofile matrix
+        df = pd.read_csv(matrix_file, index_col=0)
+        print(f"Loaded matrix with shape: {df.shape}")
+
+        # Get available RF models
+        model_files = glob.glob(os.path.join(TMP_FILES_DIR, "AID*_diverse.pkl"))
+        model_aids = [os.path.basename(f).split('_')[0][3:] for f in model_files]  # Extract AID numbers
+        
+        if not model_aids:
+            raise ValueError("No RF models found. Ensure RF models are saved as 'AID{aid}_diverse.pkl'.")
+
+        # Filter matrix to include only relevant AIDs
+        selected_cols = [aid for aid in model_aids if aid in df.columns]
+        
+        if not selected_cols:
+            raise ValueError("No matching AIDs found between bioprofile matrix and available RF models.")
+        
+        selected_df = df[selected_cols]
+        # output_file = os.path.join(TMP_FILES_DIR, 'Selected_bioprofile_matrix.csv')
+
+        selected_df.to_csv(output_file)
+        
+        print(f"Filtered matrix saved as {output_file} with shape: {selected_df.shape}")
+        return selected_df
+
+    except Exception as e:
+        print(f"Error in filtering selected AIDs: {e}")
+        return None
+
+def generate_ecfp6_fingerprint(inchi):
+    """
+    Generates an ECFP6 fingerprint for a given InChI.
+    
+    Parameters:
+    inchi (str): InChI string of the molecule.
+    
+    Returns:
+    np.array: ECFP6 fingerprint array.
+    """
+    mol = Chem.MolFromInchi(inchi)
+    if mol:
+        fp = AllChem.GetMorganFingerprintAsBitVect(mol, 3, nBits=2048)
+        arr = np.zeros((1,))
+        DataStructs.ConvertToNumpyArray(fp, arr)
+        return arr
+    else:
+        return np.zeros((2048,))  # Return zero vector if molecule is invalid
+
+def fetch_inchi_for_cids(cids):
+    """
+    Fetches InChI values for a list of CIDs from PubChem.
+    
+    Parameters:
+    cids (list): List of CIDs to fetch InChIs.
+    
+    Returns:
+    dict: Dictionary mapping CID to InChI.
+    """
+    url = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/property/InChI/CSV"
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    inchi_dict = {}
+
+    for i in range(0, len(cids), 20):  # PubChem allows up to 20 CIDs per request
+        batch = cids[i:i+20]
+         
+        data = {'cid': ','.join(map(str, batch))}
+        
+        try:
+            response = requests.post(url, data=data, headers=headers, timeout=10)
+            response.raise_for_status()
+            df = pd.read_csv(StringIO(response.text))
+            
+            for _, row in df.iterrows():
+                inchi_dict[row['CID']] = row['InChI']
+                
+        except Exception as e:
+            print(f"Error fetching InChI for batch {batch}: {e}")
+            continue
+
+    return inchi_dict
+
+def replace_negative_one_with_predictions(matrix_file='Selected_bioprofile_matrix.csv', output_file='DataFilled_bioprofile_matrix.csv'):
+    """
+    Replaces -1 values in bioprofile matrix with RF model predictions.
+    """
+    try:
+        df = pd.read_csv(matrix_file, index_col=0)
+        print(f"Loaded selected matrix with shape: {df.shape}")
+
+        model_files = glob.glob(os.path.join(TMP_FILES_DIR, "AID*_diverse.pkl"))
+        model_aids = [os.path.basename(f).split('_')[0][3:] for f in model_files]
+
+        print(f"🔍 Searching for models in: {TMP_FILES_DIR}")
+
+        # Log file to record replaced values
+        log_data = []
+
+        for aid in model_aids:
+            if aid not in df.columns:
+                continue  # Skip if AID is not present in the matrix
+
+            model_file = os.path.join(TMP_FILES_DIR, f"AID{aid}_diverse.pkl")
+            print(f"🔍 Looking for model file: {model_file}")
+
+            if not os.path.exists(model_file):
+                print(f"⚠️ Model file missing: {model_file}. Skipping AID {aid}.")
+                continue
+
+            # Load the RF model
+            try:
+                model = joblib.load(model_file)
+                print(f"Loaded model: {model_file}")
+            except Exception as e:
+                print(f"Error loading model {model_file}: {e}")
+                continue
+
+            # Find CIDs with -1 values
+            cids_to_predict = df[df[aid] == -1].index.tolist()
+            if not cids_to_predict:
+                print(f"ℹ️ No -1 values found for AID {aid}, skipping.")
+                continue
+
+            # Fetch InChI for CIDs
+            inchi_dict = fetch_inchi_for_cids(cids_to_predict)
+
+            # Generate fingerprints for valid CIDs
+            fingerprints = []
+            valid_cids = []
+
+            for cid in cids_to_predict:
+                inchi = inchi_dict.get(cid)
+                if inchi:
+                    fp = generate_ecfp6_fingerprint(inchi)
+                    fingerprints.append(fp)
+                    valid_cids.append(cid)
+
+            if not fingerprints:
+                print(f"⚠️ No valid fingerprints found for AID {aid}, skipping.")
+                continue
+
+            # Convert fingerprints to numpy array and predict values
+            fingerprints = np.array(fingerprints)
+            predictions = model.predict(fingerprints).astype(int)
+
+            # Replace -1 with predictions
+            for cid, pred in zip(valid_cids, predictions):
+                df.at[cid, aid] = pred
+                log_data.append([cid, aid, pred])
+
+            print(f"Replaced {len(valid_cids)} values for AID {aid}.")
+            
+        output_file = os.path.join(TMP_FILES_DIR, 'DataFilled_bioprofile_matrix.csv')
+        df = df.sort_index(axis=0, ascending=True)  # Sort rows in ascending order
+        df = df.sort_index(axis=1, ascending=True)  # Sort columns in ascending ord
+        df.to_csv(output_file)
+        print(f"Updated matrix saved as {output_file}")
+
+        # Save log file
+        log_file = os.path.join(TMP_FILES_DIR, 'replaced_values_log.csv')
+        pd.DataFrame(log_data, columns=['CID', 'AID', 'Predicted_Value']).to_csv(log_file, index=False)
+        print(f"Log of replaced values saved as {log_file}")
+
+        return df
+
+    except Exception as e:
+        print(f"Error in replacing -1 values with predictions: {e}")
+        return None
+
+# def main():
+#     data_file = 'sample_dataset.txt'
+
+#     target_compounds = []
+#     with open(data_file, "r") as csv_file:
+#         for line in csv_file:
+#             target_compounds.append(line.strip())
+
+#     bioprofile(target_compounds, chunk=100, outfile='bioprofile_long.csv')
+
+#     matrix = make_matrix('bioprofile_long.csv', min_actives=1, outfile='bioprofile_matrix.csv')
+
+#     get_heat_map(matrix)
+    
+#     select_top_assays('bioprofile_matrix.csv', 'SelectedAssays.csv')
+    
+#     fetch_and_save_aid_data()
+    
+#     generate_all_rf_models_and_save_metrics()
+    
+#     plot_rf_metrics()
+    
+#     filter_selected_aids()
+    
+#     replace_negative_one_with_predictions()
+    
+# if __name__ == "__main__":
+#     main()

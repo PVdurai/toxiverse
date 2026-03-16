@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1 class="w3-large">{% block title %}Please log In{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+
+<div class="login-body" >
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card shadow p-3 mb-5 bg-white rounded" id="dataset-card">
+          <div class="card-body">
+		        <h3 class="card-title">Welcome to ToxiVerse</h3>
+		        <br>
+		        <p class="card-text">
+		            If you don't have an account, click <a href="{{ url_for('auth.register') }}"><span class="font-weight-bold ">here</span> </a>
+                    to register.<br>
+		                <br>
+
+                    <h3>Please log in:</h3>
+
+                    {% if error %}
+                        <p class="error"><strong>Error:</strong> {{ error }}</p>
+                    {% endif %}
+
+                    <form action="" method="post">
+                        <input type="text" placeholder="Username" name="username" value="{{
+                        request.form.username }}" required><br>
+                        <br>
+                        <input type="password" placeholder="Password" name="password" value="{{
+                        request.form.password }}" required><br>
+                        <br>
+                        <input class="btn btn-primary" type="submit" value="Login">
+                        <br>
+                    </form>
+                    <br>
+                    <br>
+                    Forgot Username? click <a href="{{ url_for('auth.register') }}"><span class="font-weight-bold ">here</span></a><br>
+                    Forgot Password? click <a href="{{ url_for('auth.password_reset_request') }}"><span class="font-weight-bold ">here</span></a><br>
+                    Need another registration email? click <a href="{{ url_for('auth.resend_confirmation_email') }}"><span class="font-weight-bold ">here</span></a><br>
+              </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+{% endblock %}

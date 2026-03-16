@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- About ToxiVerse -->
+<section class="py-5 hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-4">
+        <span class="dot"></span> About ToxiVerse
+      </div>
+      <div class="row align-items-center">
+        <div class="col-md-4 text-center mb-3 mb-md-0">
+          <img
+            src="{{ url_for('static', filename='img/ToxiVerse_grey.png') }}"
+            alt="ToxiVerse logo"
+            class="img-fluid round-2xl shadow-sm"
+            style="max-width:260px; width:100%; height:auto;"
+            loading="lazy">
+        </div>
+        <div class="col-md-8">
+          <p>
+            <strong>ToxiVerse</strong> (Toxicology Universe) is an open-source, comprehensive platform for bioprofiling,
+            curated toxicological datasets, quantitative structure-activity relationship (QSAR) modeling,
+            and chemical data analysis.
+          </p>
+          <p class="mb-0">
+            The platform has three main modules:
+            <strong>Bioprofiler</strong> (PubChem bioactivity-based profiling),
+            <strong>Database</strong> (curated toxicity datasets with sources; currently ~<strong>50,000</strong> chemicals),
+            and the <strong>Cheminformatics</strong> module (curation, PCA, QSAR model building, and prediction).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- About Zhu Lab + Contact -->
+<section class="py-5 band-soft">
+  <div class="container">
+    <div class="row">
+      <!-- Zhu Lab -->
+      <div class="col-md-7 mb-4 mb-md-0">
+        <div class="tv-card p-4 h-100">
+          <div class="section-title mb-3">
+            <span class="dot"></span> About Zhu Lab
+          </div>
+          <div class="text-center mb-3">
+            <a href="https://www.zhuhlab.com/" target="_blank" rel="noopener">
+              <img
+                src="{{ url_for('static', filename='img/lablogo.png') }}"
+                alt="Zhu Lab logo"
+                class="img-fluid"
+                style="max-width:100px; width:100%; height:auto;"
+                loading="lazy">
+            </a>
+          </div>
+          <p class="mb-0">
+            The Zhu Lab develops cheminformatics algorithms, workflows, and computational tools to model chemical toxicity,
+            ADME (Absorption, Distribution, Metabolism, and Excretion), and other biological activities,
+            supporting regulatory toxicity assessment and computer-aided drug discovery (CADD).
+          </p>
+        </div>
+      </div>
+
+      <!-- Contact -->
+      <div class="col-md-5">
+        <div class="tv-card p-4 h-100">
+          <div class="section-title mb-3">
+            <span class="dot"></span> Contact Us
+          </div>
+
+          <div class="mb-3">
+            <div class="font-weight-bold">Rowan University</div>
+            <a
+              href="https://www.google.com/maps/place/Robinson+Hall/@39.7090516,-75.1205057,17z/data=!3m1!5s0x89c6d7a7cf77faa1:0xb3ed5fc39376aa84!4m15!1m8!3m7!1s0x89c6d7a8f3a0e34d:0xcfed32b6801c4e7b!2s201+Mullica+Hill+Rd,+Glassboro,+NJ+08028"
+              target="_blank" rel="noopener" class="pi-alink-color">
+              201 Mullica Hill Rd, Robinson Hall, Glassboro, NJ 08028
+            </a>
+          </div>
+
+          <div class="mb-3">
+            <div class="font-weight-bold">Tulane University</div>
+            <a
+              href="https://www.google.com/maps/place/Hutchinson+Memorial+Building,+New+Orleans,+LA+70112"
+              target="_blank" rel="noopener" class="pi-alink-color">
+              Hutchinson Memorial Building (School of Medicine), 1415 Tulane Ave, New Orleans, LA 70112
+            </a>
+          </div>
+
+          <p class="mb-0">
+            For questions or general inquiries, email
+            <a href="mailto:toxiverse.help@gmail.com" class="pi-alink-color">toxiverse.help@gmail.com</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Intro (hero) -->
+<section class="hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-3">
+        <span class="dot"></span> Principal Component Analysis
+      </div>
+      <p class="mb-0 subtle">
+        Principal Component Analysis (PCA) reduces high-dimensional descriptors into a few components
+        that capture most variance, making it easier to visualize chemical space. Select a dataset and
+        click <em>Perform PCA</em> to generate the plot.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Controls + Plot -->
+<section class="py-5">
+  <div class="container">
+    <div class="tv-card p-0" id="dataset-card" style="overflow:hidden;">
+      <div class="p-3 p-md-4">
+
+        {% if not user_datasets %}
+          <p class="mb-0">
+            Please upload a dataset via <strong>Cheminformatics → Upload or Retrieve Dataset</strong> to run PCA.
+          </p>
+        {% endif %}
+
+        {% if user_datasets %}
+        <form action="{{ url_for('cheminf.PCA') }}" method="post" enctype="multipart/form-data" class="mb-3">
+          <div class="form-group">
+            <label for="dataset-selection" class="font-weight-600">Select dataset:</label>
+            <select class="form-control" id="dataset-selection" name="dataset-selection" required>
+              {% for dataset in user_datasets %}
+                <option value="{{ dataset.dataset_name }}">{{ dataset.dataset_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-cta" onclick="showLoader()">Perform PCA</button>
+          </div>
+        </form>
+        {% endif %}
+
+      </div>
+
+      {% if pca_plot %}
+        <!-- Plot container (edge-to-edge inside card) -->
+        <div id="chart" style="height:700px; width:100%;" aria-label="PCA scatter plot"></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% if pca_plot %}
+<script type="text/javascript">
+  (function() {
+    var graphs = {{ pca_plot | safe }};
+    var config = { responsive: true, displaylogo: false };
+    var fallbackLayout = { margin: { l: 40, r: 10, t: 30, b: 40 }, height: 700 };
+    var data = Array.isArray(graphs) ? graphs : (graphs.data || []);
+    var layout = graphs.layout ? graphs.layout : fallbackLayout;
+
+    function draw() { Plotly.newPlot('chart', data, layout, config); }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', draw);
+    } else {
+      draw();
+    }
+
+    window.addEventListener('resize', function() {
+      var el = document.getElementById('chart');
+      if (el) { Plotly.Plots.resize(el); }
+    });
+  })();
+</script>
+{% endif %}
+
+{% endblock %}

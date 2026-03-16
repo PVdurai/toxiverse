@@ -1,0 +1,96 @@
+<style>
+  .task-table-container {
+    width: 90vw;
+    max-width: 1200px;
+    margin: 60px auto 40px auto;
+    height: auto;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 10px 25px rgba(2,6,23,.08);
+    padding: 0;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+
+  .task-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .task-table th,
+  .task-table td {
+    border: 1px solid #dee2e6;
+    padding: 1rem;
+    font-size: 15px;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+  }
+
+  .task-table th {
+    background: #fff;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(15,23,42,.08);
+  }
+
+  .task-table .badge {
+    font-size: 13px;
+    padding: 6px 12px;
+    font-weight: 500;
+  }
+
+  @media (max-width: 768px) {
+    .task-table th,
+    .task-table td {
+      font-size: 14px;
+      padding: 0.6rem;
+    }
+    .task-table-container {
+      padding: 10px;
+    }
+  }
+</style>
+
+<div class="task-table-container tv-card">
+  <table class="table task-table">
+    <thead>
+      <tr>
+        <th style="width: 70%;">Description</th>
+        <th style="width: 30%;">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% set tasks = user.get_tasks_in_progress() %}
+      {# Note: Bioprofiler jobs have their own status page, so we only show QSAR/curation tasks here #}
+
+      {% if tasks %}
+        {# Show Task model items (QSAR and curation jobs only) #}
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.description }}</td>
+          <td>
+            {% set status = task.get_progress() %}
+            {% if status == 'Complete' %}
+              <span class="badge badge-success">{{ status }}</span>
+            {% elif status == 'Queued' %}
+              <span class="badge badge-warning text-dark">{{ status }}</span>
+            {% elif 'error' in status|lower %}
+              <span class="badge badge-danger">{{ status }}</span>
+            {% else %}
+              <span class="badge badge-info text-dark">{{ status }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="2"><em>No tasks in progress</em></td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>

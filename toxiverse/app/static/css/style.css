@@ -1,0 +1,331 @@
+/* =========================
+   ToxiVerse Theme (Colorful) — clean
+   ========================= */
+
+@import "https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700";
+
+/* ---------- Palette & Tokens ---------- */
+:root{
+  --brand-ink:#1F4B56;
+  --primary:#6A1B9A;
+  --primary-600:#7B1FA2;
+  --primary-200:#E9D5FF;
+  --mint:#4DB6AC;
+  --mint-100:#E0F2F1;
+  --cyan:#5B7FFF;
+  --peach:#FF875E;
+  --yellow:#F7D154;
+
+  --bg:#FFFFFF;
+  --bg-soft:#F7F9FC;
+  --card:#FFFFFF;
+
+  --text-900:#0F172A;
+  --text-700:#334155;
+  --muted:#6B7280;
+
+  --ring: rgba(91,127,255,.35);
+  --shadow-md: 0 10px 25px rgba(2,6,23,.08);
+  --shadow-sm: 0 4px 14px rgba(2,6,23,.06);
+
+  /* layout knobs */
+  --tv-space-card: .9rem;  /* gap between cards/sections */
+  --tv-pad: 1rem;          /* inner padding for cards */
+
+  /* sequential colors for “5 result” buttons */
+  --seq1:#4f46e5;  /* indigo   */
+  --seq2:#0ea5e9;  /* sky      */
+  --seq3:#10b981;  /* emerald  */
+  --seq4:#f59e0b;  /* amber    */
+  --seq5:#ef4444;  /* red      */
+}
+
+/* ---------- Base ---------- */
+html, body {
+  background: var(--bg);
+  color: var(--text-900);
+  font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+p { font-size: 1.05rem; font-weight: 300; line-height: 1.7em; color: var(--text-700); }
+
+a, a:hover, a:focus {
+  color: var(--cyan);
+  text-decoration: none;
+  transition: color .2s ease, background-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+/* ---------- Navbar ---------- */
+.navbar{ background:#fff !important; box-shadow: 0 10px 24px rgba(2,6,23,.06); }
+.navbar .navbar-brand{ font-weight:700; letter-spacing:.2px; }
+.navbar-light .navbar-nav .nav-link{ font-weight:500; letter-spacing:.2px; }
+
+/* Show dropdowns on hover (desktop) */
+@media (min-width: 992px){
+  .navbar .dropdown:hover>.dropdown-menu{ display:block; }
+  .navbar .dropdown-toggle::after{ pointer-events:none; }
+}
+
+/* Link helpers */
+.pi-text-color{ color: var(--brand-ink) !important; }
+.pi-alink-color{ color: var(--brand-ink) !important; }
+.pi-alink-color:hover{ color:#228c9b !important; }
+.pi-dropdown-item:hover{ background-color: var(--mint); color:#fff !important; }
+
+/* ---------- App layout ---------- */
+#content{ width:100%; padding:20px; min-height:100vh; transition: all .3s; }
+
+/* ---------- Hero ---------- */
+.hero{
+  position: relative;
+  background:
+    radial-gradient(1200px 400px at 80% -10%, rgba(106,27,154,.10), transparent 60%),
+    radial-gradient(900px 360px at 10% -10%, rgba(77,182,172,.12), transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  padding: 64px 0 48px;
+}
+.hero .lead{ color: var(--text-700); max-width: 720px; }
+
+/* ---------- Section headers ---------- */
+.section-title{
+  display:flex; align-items:center; gap:.6rem;
+  font-weight:700; letter-spacing:.2px;
+}
+.section-title .dot{
+  width:12px; height:12px; border-radius:4px;
+  background: linear-gradient(135deg, var(--mint), var(--cyan));
+  box-shadow: 0 0 0 3px rgba(0,0,0,.05);
+}
+.kicker{ text-transform:uppercase; letter-spacing:.14em; font-weight:700; color: var(--muted); }
+.subtle{ color: var(--text-700); }
+.round-2xl{ border-radius: 20px; }
+
+/* ---------- Cards ---------- */
+.tv-card{
+  background: var(--card);
+  border: 1px solid rgba(15,23,42,.06);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.tv-card:hover{ transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+/* ---------- Tiles ---------- */
+.tile{
+  border-radius: 18px; padding: 18px;
+  color:#0f172a !important; font-weight:600;
+  display:flex; align-items:center; gap:.9rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.tile i{ font-size: 1.25rem; }
+.tile:hover{ transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+/* Pastel variants */
+.tile-phys{ background: linear-gradient(180deg,#fff,#F3F4F6); }
+.tile-abs { background: linear-gradient(180deg,#fff,#E0F2F1); }
+.tile-dis { background: linear-gradient(180deg,#fff,#E6F0FF); }
+.tile-met { background: linear-gradient(180deg,#fff,#FFF2E8); }
+.tile-exc { background: linear-gradient(180deg,#fff,#FFF8D9); }
+.tile-tox { background: linear-gradient(180deg,#fff,#FCE7F3); }
+.tile-chem{ background: linear-gradient(180deg,#fff,#E9D5FF); }
+
+.band-soft{
+  background: var(--bg-soft);
+  border-top: 1px solid rgba(2,6,23,.04);
+  border-bottom: 1px solid rgba(2,6,23,.04);
+}
+
+/* ---------- Buttons ---------- */
+.btn-cta{
+  background: var(--cyan); color:#fff !important;
+  border:none; border-radius:12px;
+  padding:.75rem 1.2rem; font-weight:600;
+  box-shadow: var(--shadow-sm);
+}
+.btn-cta:hover{ filter:brightness(.92); color:#fff !important; }
+
+.btn-ghost{
+  background:#fff; color: var(--brand-ink) !important;
+  border:1px solid rgba(2,6,23,.10);
+  border-radius:12px; padding:.75rem 1.2rem; font-weight:600;
+}
+.btn-ghost:hover{ background:#f8fafc; }
+
+/* Consistent sizing for action buttons */
+.btn-sample,
+.btn-open-table,
+.btn-import,
+.btn-build,
+.btn-seq{
+  display:inline-flex; align-items:center; justify-content:center;
+  padding:.55rem 1rem; font-size:.875rem; line-height:1.2;
+  border-radius:.375rem; min-width:220px; height:40px; white-space:nowrap; border:none;
+}
+
+/* Specific colors */
+.btn-sample-csv, .btn-pred-sample-csv{ background:#2563eb; color:#fff; } /* blue */
+.btn-sample-csv:hover, .btn-pred-sample-csv:hover{ filter:brightness(.92); }
+
+.btn-sample-sdf, .btn-sample-txt{ background:#f97316; color:#fff; }      /* orange (TXT same as SDF) */
+.btn-sample-sdf:hover, .btn-sample-txt:hover{ filter:brightness(.92); }
+
+.btn-import{ background:#0ea5e9; color:#fff; }                            /* sky/teal */
+.btn-import:hover{ filter:brightness(.92); }
+
+.btn-build{ background:#16a34a; color:#fff; }                             /* green */
+.btn-build:hover{ filter:brightness(.92); }
+
+.btn-open-table{ background:#06b6d4; color:#fff; }                        /* cyan */
+.btn-open-table:hover{ filter:brightness(.92); }
+.btn-open-table:disabled{ opacity:.6; cursor:not-allowed; }
+
+/* 5-results sequence */
+.btn-seq-1{ background:var(--seq1); color:#fff; }
+.btn-seq-2{ background:var(--seq2); color:#fff; }
+.btn-seq-3{ background:var(--seq3); color:#fff; }
+.btn-seq-4{ background:var(--seq4); color:#1f2937; } /* better contrast on amber */
+.btn-seq-5{ background:var(--seq5); color:#fff; }
+.btn-seq:hover{ filter:brightness(.92); }
+
+/* Keep the 5 download buttons on one row; scroll on narrow screens */
+.download-row{ display:flex; gap:.5rem; flex-wrap:nowrap; overflow-x:auto; padding-bottom:.25rem; }
+.download-row .btn{ white-space:nowrap; }
+
+/* Tighten text for long “Results” labels */
+#btn-download-bioprofile,
+#btn-download-heatmap,
+#btn-download-metrics,
+#btn-download-metrics-plot,
+#btn-download-filled-matrix{
+  font-size:.9rem; line-height:1.15; padding:.5rem .85rem; white-space:normal; text-align:center; min-width:180px;
+}
+@media (max-width:576px){
+  #btn-download-bioprofile,
+  #btn-download-heatmap,
+  #btn-download-metrics,
+  #btn-download-metrics-plot,
+  #btn-download-filled-matrix{ font-size:.85rem; min-width:150px; }
+}
+
+/* Equalize paired action buttons (Tutorial page) */
+.btn-equal{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:48px; min-width:220px; padding:0 1.25rem;
+  line-height:1; white-space:nowrap; font-size:1rem; font-weight:600;
+}
+
+/* ---------- Feature table shell ---------- */
+.feature-table{
+  overflow:hidden; border-radius:16px;
+  border:1px solid rgba(15,23,42,.06); box-shadow: var(--shadow-sm);
+}
+.feature-table .thead{
+  background: linear-gradient(180deg, var(--primary-200), #ffffff);
+  padding:.9rem 1rem; font-weight:700;
+}
+
+/* Sticky header & first column for tables inside .feature-table */
+.feature-table .table thead th{
+  position:sticky; top:0; z-index:2; background:#fff; box-shadow:0 2px 4px rgba(15,23,42,.08);
+}
+.feature-table .table td:first-child,
+.feature-table .table th:first-child{
+  position:sticky; left:0; z-index:1; background:#fff; box-shadow:2px 0 4px rgba(15,23,42,.06);
+}
+
+/* DataTables & chosen tweaks */
+.dataTables_wrapper .dataTables_filter input{
+  border:1px solid rgba(15,23,42,.12); border-radius:10px; padding:.35rem .6rem;
+}
+.chosen-container-single .chosen-single{
+  border-radius:10px; border:1px solid rgba(15,23,42,.12);
+}
+
+/* ---------- Loader ---------- */
+.pi-loader-text{ color:#fff; font-size:20px; font-weight:600; }
+.pi-loader-backdrop{
+  display:none; position:fixed; z-index:1040; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,.64);
+}
+.pi-loader-container{
+  display:none; position:fixed; top:50%; right:50%; translate:50% -50%;
+}
+.pi-dots-grid{ position:relative; width:70px; height:70px; margin:auto; margin-bottom:20px; }
+.pi-dot{ width:25px; height:25px; border-radius:50%; position:absolute; animation: moveSquare 1.7s ease-in-out infinite; }
+.pi-dot:nth-child(1){ background:#f44336; animation-delay:0s; }
+.pi-dot:nth-child(2){ background:#009688; animation-delay:.4s; }
+.pi-dot:nth-child(3){ background:#ffb300; animation-delay:.8s; }
+.pi-dot:nth-child(4){ background:#263238; animation-delay:1.2s; }
+@keyframes moveSquare{
+  0%,12.5%{ transform: translate(0,0); }
+  25%,37.5%{ transform: translate(40px,0); }
+  50%,62.5%{ transform: translate(40px,40px); }
+  75%,87.5%{ transform: translate(0,40px); }
+  100%{ transform: translate(0,0); }
+}
+.pi-loader-backdrop.active, .pi-loader-container.active{ display:block; }
+
+/* ---------- Global spacing overrides (scoped) ---------- */
+html body #content .tv-card,
+html body #content .card{
+  margin-top:var(--tv-space-card) !important;
+  margin-bottom:var(--tv-space-card) !important;
+}
+html body #content .card-body,
+html body #content .tv-card{ padding:var(--tv-pad) !important; }
+
+html body #content section{
+  margin-top:var(--tv-space-card) !important;
+  margin-bottom:var(--tv-space-card) !important;
+  padding-top:var(--tv-space-card) !important;
+  padding-bottom:var(--tv-space-card) !important;
+}
+
+/* beat Bootstrap spacing utils inside #content */
+html body #content .mt-5,
+html body #content .mb-5,
+html body #content .my-5{ margin-top:var(--tv-space-card) !important; margin-bottom:var(--tv-space-card) !important; }
+html body #content .pt-5,
+html body #content .pb-5,
+html body #content .py-5{ padding-top:var(--tv-space-card) !important; padding-bottom:var(--tv-space-card) !important; }
+html body #content .p-5{ padding:var(--tv-pad) !important; }
+@media (min-width:768px){ html body #content .p-md-5{ padding:var(--tv-pad) !important; }}
+
+/* Trim trailing inner gaps */
+html body #content .tv-card > :last-child,
+html body #content .card-body > :last-child{ margin-bottom:0 !important; }
+
+/* Neutralize inline min-heights from old templates */
+html body #content .row[style*="min-height"]{ min-height:auto !important; }
+
+/* ---------- Curated Datasets: clear end line ---------- */
+#content .full-container .table{
+  border-collapse:separate; border-spacing:0;
+  box-shadow: 0 6px 0 -4px rgba(148,163,184,.6);
+}
+#content .full-container .table tbody tr:last-child td{
+  border-bottom:3px solid #94a3b8 !important;
+}
+
+/* ---------- Home-only look (pure white, no outlines) ---------- */
+body.home-white{ background:#fff; }
+body.home-white .navbar{ box-shadow:none !important; }
+body.home-white .tv-card,
+body.home-white .card{ border:0 !important; box-shadow:none !important; }
+body.home-white section.hero{ background:#fff !important; background-image:none !important; }
+body.home-white section.hero .tv-card{ margin-bottom:1rem !important; }
+
+/* Home welcome heading */
+.home-welcome{
+  font-weight:700;
+  font-size: clamp(1.7rem, 4.7vw, 3.35rem);  /* ~1/3 smaller than earlier “huge” version */
+  line-height:1.05; letter-spacing:-0.01em; color: var(--text-900);
+}
+.home-welcome--brand{ color: var(--brand-ink); }
+
+/* ---------- Legacy bits kept (unchanged) ---------- */
+ul ul a { font-size:.9em !important; padding-left:30px !important; background:#e3371e; color:#fff; }
+ul.CTAs { padding:20px; }
+ul.CTAs a { text-align:center; font-size:.9em !important; display:block; border-radius:5px; margin-bottom:5px; }
+a.download { background:#ff7a48; color:#e3371e; }
+a.article, a.article:hover { background:#e3371e !important; color:#ff7a48 !important; }

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Title -->
+<section class="hero">
+  <div class="container">
+    <div class="tv-card p-4 p-md-5">
+      <div class="section-title mb-3">
+        <span class="dot"></span> ToxiVerse Database
+      </div>
+      <p class="mb-0 subtle">
+        Explore over <strong>50,000</strong> chemicals across <strong>15</strong> datasets covering
+        50+ endpoints mainly related to toxicity. View relevant PubChem bioassays (ranked by active rate) and download any dataset below.
+        Details on collection procedures, sources, and endpoint definitions are under <em>Database → Resources</em>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PCA + Histogram -->
+<section class="py-5">
+  <div class="container">
+    <div class="row" style="min-height: 580px;">
+      <!-- PCA -->
+      <div class="col-lg-6 mb-4 mb-lg-0">
+        <div class="tv-card p-4 h-100">
+          <h4 class="mb-3">Principal Component Analysis</h4>
+          <div id="pca-wrapper">
+            <div id="3d-pca" class="chart" style="height: 450px; width: 100%;" aria-label="3D PCA plot"></div>
+          </div>
+          <div class="mt-2" style="font-size: 16px; line-height: 1.6;">
+            <div><span style="color: red;">●</span> Compounds with endpoint data in this dataset</div>
+            <div><span style="color: #808080;">●</span> Compounds without endpoint data in this dataset</div>
+            <div><span style="color: blue;">●</span> Compounds from other datasets</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Histogram -->
+      <div class="col-lg-6">
+        <div class="tv-card p-4 h-100">
+          <h4 class="mb-3">Endpoint Distribution</h4>
+          <label for="endpoint-selection" class="font-weight-600">Select endpoint:</label>
+          <select class="form-control mb-3" id="endpoint-selection" name="endpoint-selection">
+            {% for endpoint in endpoints %}
+              <option value="{{ endpoint.Endpoint }}">{{ endpoint.Endpoint }} ({{ endpoint.Dataset }})</option>
+            {% endfor %}
+          </select>
+          <div id="hist-wrapper" class="mx-auto" style="width: 100%;">
+            <div id="endpoint-histogram" class="chart" style="height: 450px; width: 100%;" aria-label="Endpoint histogram"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bioassay Table + Download -->
+<section class="py-3">
+  <div class="container">
+    <div class="tv-card p-0">
+      <div class="p-3 p-md-4">
+        <h4 class="mb-2">Relevant Bioassays</h4>
+        <p class="mb-3 subtle">
+          Bioassays are ranked by active rate (<code>Active / (Active + Inactive)</code>) for the selected endpoint.
+          Assays with ≥1 Active are included. To stabilize small-sample assays, we used Bayesian-adjusted scores and
+          retaind up to the top 500 assays per endpoint. Inconclusive results are shown but excluded from calculations.
+        </p>
+
+        <div class="feature-table">
+          <div class="thead">PubChem Bioassays</div>
+          <div class="table-responsive">
+            <table id="bioassay-table" class="table table-striped table-bordered align-middle mb-0" style="width:100%">
+              <thead class="thead-light">
+                <tr>
+                  <!-- Add 'sorting' classes so arrows show; center all except the Name column -->
+                  <th class="sorting text-center">AID</th>
+                  <th class="sorting">Bioassay Name</th>
+                  <th class="sorting text-center">Inactive</th>
+                  <th class="sorting text-center">Inconclusive</th>
+                  <th class="sorting text-center">Active</th>
+                  <th class="sorting_desc text-center">Active Rate</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="col-md-8 p-0 mt-4">
+          <h4 class="mb-2">Download a Database</h4>
+          <form action="{{ url_for('toxpro.download_database') }}" method="post">
+            <label for="database-selection" class="font-weight-600">Select database:</label>
+            <select class="form-control" id="database-selection" name="database-selection" required>
+              {% for database in current_dbs %}
+                <option value="{{ database }}">{{ database }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-cta mt-3">Download</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ===== JavaScript ===== #}
+{% set default_endpoint = endpoints[0].Endpoint if endpoints and endpoints[0] else '' %}
+<script type="text/javascript">
+  (function() {
+    const config = { responsive: true };
+    const pcaLayout = {
+      margin: { l: 0, r: 0, b: 0, t: 0 },
+      scene: {
+        camera: { eye: { x: 0, y: 2.5, z: 0 } },
+        xaxis: { title: 'PC1', showticklabels: false, range: [-50, 100] },
+        yaxis: { title: 'PC2', showticklabels: false, range: [-40, 20] },
+        zaxis: { title: 'PC3', showticklabels: false, range: [-20, 50] }
+      },
+      height: 450
+    };
+
+    function loadPCA(endpoint) {
+      if (!endpoint) return;
+      $.ajax('/api/tox-pca-data', {
+        data: { endpointSelection: endpoint },
+        success: function (data) {
+          Plotly.newPlot('3d-pca', data, pcaLayout, config);
+        },
+        error: function() {
+          Plotly.purge('3d-pca');
+          $('#3d-pca').html('<div class="text-muted">PCA data unavailable for the selected endpoint.</div>');
+        }
+      });
+    }
+
+    function updatePCA(endpoint) {
+      if (!endpoint) return;
+      $.ajax('/api/update-pca', {
+        data: { endpointSelection: endpoint },
+        success: function (update) {
+          // Fallback to full redraw if restyle fails
+          try { Plotly.restyle('3d-pca', update, [0]); }
+          catch(e) { loadPCA(endpoint); }
+        },
+        error: function() { loadPCA(endpoint); }
+      });
+    }
+
+    function loadHistogram(endpoint) {
+      if (!endpoint) return;
+      $.ajax('/api/tox-ep', {
+        data: { endpointSelection: endpoint },
+        success: function (data) {
+          const layout = {
+            title: ``,
+            xaxis: { title: endpoint },
+            yaxis: { title: 'Chemical Count' },
+            bargap: 0.1,
+            height: 450,
+            margin: { l: 40, r: 10, t: 40, b: 40 }
+          };
+          Plotly.newPlot('endpoint-histogram', data, layout, config);
+        },
+        error: function() {
+          Plotly.purge('endpoint-histogram');
+          $('#endpoint-histogram').html('<div class="text-muted">Histogram unavailable for the selected endpoint.</div>');
+        }
+      });
+    }
+
+    function loadBioassayTable(endpoint) {
+      $('#bioassay-table').DataTable({
+        destroy: true,
+        paging: true,
+        searching: true,
+        order: [[5, 'desc']], // default sort: Active Rate (desc)
+        ajax: {
+          url: '/api/tox-bioprofile',
+          data: function (d) { d.endpointSelection = endpoint; },
+          error: function () {
+            alert('Bioprofile data is not available for this endpoint.');
+          }
+        },
+        columns: [
+          { data: 'AID' },
+          { data: 'BioAssay Name' },
+          { data: 'Inactive' },
+          { data: 'Inconclusive' },
+          { data: 'Active' },
+          { data: 'Active rate',
+            render: function (data) {
+              const v = parseFloat(data);
+              return isNaN(v) ? '' : v.toFixed(2);
+            }
+          }
+        ],
+        columnDefs: [
+          { targets: [0, 2, 3, 4, 5], className: 'text-center' }, // center all numeric columns
+          { targets: 1, className: 'text-left' }                  // left-align Bioassay Name
+        ]
+      });
+    }
+
+    function debounce(fn, delay) {
+      let t;
+      return function(...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), delay);
+      };
+    }
+
+    $(document).ready(function () {
+      const initial = '{{ default_endpoint }}';
+
+      if (initial) {
+        loadPCA(initial);
+        loadHistogram(initial);
+        loadBioassayTable(initial);
+      } else {
+        $('#3d-pca').html('<div class="text-muted">No endpoints available.</div>');
+        $('#endpoint-histogram').html('<div class="text-muted">No endpoints available.</div>');
+        loadBioassayTable('');
+      }
+
+      // Fix: Plotly resize expects DOM nodes, not ids
+      window.addEventListener('resize', function() {
+        const pcaEl = document.getElementById('3d-pca');
+        const histEl = document.getElementById('endpoint-histogram');
+        if (pcaEl && Plotly.Plots && Plotly.Plots.resize) Plotly.Plots.resize(pcaEl);
+        if (histEl && Plotly.Plots && Plotly.Plots.resize) Plotly.Plots.resize(histEl);
+      });
+
+      $('#endpoint-selection').on('change', debounce(function () {
+        const selected = this.value;
+        updatePCA(selected);
+        loadHistogram(selected);
+        loadBioassayTable(selected);
+      }, 200));
+    });
+  })();
+</script>
+
+{% endblock %}

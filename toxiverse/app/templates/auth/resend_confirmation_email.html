@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1 class="w3-large">{% block title %}Please log In{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+
+<div class="login-body" >
+
+    <div class="row">
+      <div class="col-sm-4">
+        <div class="card shadow p-3 mb-5 bg-white rounded" id="dataset-card">
+          <div class="card-body">
+		        <h3 class="card-title">Email Reset</h3>
+		        <br>
+		        <p class="card-text">
+		            If you don't have a log in, click <a href="{{ url_for('auth.register') }}"><span class="font-weight-bold ">here</span></a>
+                    to register.<br>
+		                <br>
+
+		            If you would like another registration email sent to your email, enter your email address or username below.<br>
+		                <br>
+
+                    {% if error %}
+                        <p class="error"><strong>Error:</strong> {{ error }}</p>
+                    {% endif %}
+
+                    <form action="{{ url_for('auth.resend_confirmation_email') }}" method="post">
+                    <input type="text" placeholder="Enter Email" name="email"><br>
+                        <br>
+                    <input type="text" placeholder="Enter Username" name="username"><br>
+                        <br>
+                        <input class="btn btn-primary" type="submit" value="Submit">
+                        <br>
+                    </form>
+                    <br>
+                    <br>
+              </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+{% endblock %}
