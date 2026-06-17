@@ -1,124 +1,275 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Hero -->
-<section class="hero">
-  <div class="container">
-    <div class="tv-card p-4 p-md-5">
-      <div class="section-title mb-3">
-        <span class="dot"></span> QSAR Predictor
-      </div>
-      <p class="mb-0 subtle">
-        Select one or more previously built QSAR models to predict the activity of up to <strong>100</strong> chemicals.
-        After prediction, a modified CSV or SDF will download automatically. Predictions are written to
-        <code>ModelName_Prediction</code> column(s). For classification, this is the class label (1 = active/toxic, 0 = inactive/non-toxic).
-        For regression, it’s the predicted continuous value. Empty or invalid SMILES are removed before prediction.
-      </p>
+<style>
+  .qsar-structure svg {
+    max-width: 180px;
+    height: auto;
+  }
 
-      <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
-        <a href="{{ url_for('toxpro.example_file', format='prediction_csv') }}" class="btn btn-sample btn-sample-csv">
-          Download Prediction Sample CSV
-        </a>
-        <a href="{{ url_for('toxpro.example_file', format='prediction_sdf') }}" class="btn btn-sample btn-sample-sdf">
-          Download Prediction Sample SDF
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
+  .qsar-smiles {
+    max-width: 240px;
+    word-break: break-all;
+    white-space: normal;
+    font-size: 0.82rem;
+  }
 
-<!-- Content -->
-<section class="py-5">
-  <div class="container">
-    <div class="tv-card p-4 p-md-5">
+  .qsar-small-text {
+    font-size: 0.82rem;
+  }
 
-      {% if not user_qsar_models %}
-        <p class="mb-0">No QSAR models available. Please use <strong>Cheminformatics → QSAR Builder</strong> to create QSAR model(s).</p>
-      {% else %}
+  .qsar-results-table th,
+  .qsar-results-table td {
+    vertical-align: middle !important;
+  }
+</style>
 
-      <form id="qsar-form" action="{{ url_for('cheminf.QSAR_predict', session_id=session_id) if session_id else url_for('cheminf.QSAR_predict') }}" method="post" enctype="multipart/form-data">
-        <div class="row">
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow p-3 mb-5 bg-white rounded" id="dataset-card">
+      <div class="card-body">
+        <h3>QSAR Predictor</h3>
+        <p class="card-text">
+          Select one or more previously built QSAR models to predict the activity of up to
+          <strong>100</strong> chemicals. Results are displayed below as a table and a
+          downloadable CSV file is available using the Download CSV button.
+        </p>
+        <p class="card-text">
+          The table includes the query structure, prediction, closest training-set match,
+          maximum similarity, and whether the query is within the model range. Model-specific
+          threshold values are shown once above the table. Molecules marked as
+          <strong>Outside range</strong> are less similar to the model training set than expected
+          for that model and should be interpreted with caution.
+        </p>
 
-          <!-- QSAR model selection -->
-          <div class="col-md-6 mb-3">
-            <label for="model-selection" class="font-weight-600">Select QSAR model:</label>
-            <select id="model-selection"
-                    data-placeholder="Choose or type the model name..."
-                    multiple
-                    class="chosen-select"
-                    name="model-selection">
-              {% for qsar_model in user_qsar_models %}
-                <option value="{{ qsar_model.name }}">{{ qsar_model.name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-
-          <!-- Input method toggle -->
-          <div class="col-md-6 mb-3">
-            <label class="font-weight-600 d-block">Input Method:</label>
-            <div class="form-check">
-              <input type="radio" class="form-check-input" name="input-method" value="file" id="method-file" checked>
-              <label class="form-check-label" for="method-file">Upload CSV/SDF File</label>
-            </div>
-            <div class="form-check">
-              <input type="radio" class="form-check-input" name="input-method" value="text" id="method-text">
-              <label class="form-check-label" for="method-text">Paste SMILES</label>
-            </div>
-          </div>
-
-          <!-- File upload + SMILES column -->
-          <div class="col-md-6 mb-3" id="file-input-section">
-            <label for="predict-file" class="font-weight-600">Select CSV or SDF File:</label>
-            <div class="input-group">
-              <input type="file" class="form-control" name="predict-file" accept=".csv,.sdf">
-              <button type="submit" class="btn btn-cta">Predict</button>
-            </div>
-
-            <small class="text-muted d-block mt-2">
-              SMILES column name in the CSV (default is <code>SMILES</code> if left empty).
-            </small>
-            <input type="text" class="form-control mt-2" name="smiles-column" placeholder="SMILES">
-          </div>
-
-          <!-- SMILES paste area -->
-          <div class="col-md-12 mb-3" id="smiles-text-area" style="display:none;">
-            <label for="smiles-input" class="font-weight-600">Paste up to 100 SMILES (one per line):</label>
-            <textarea class="form-control" name="smiles-input" id="smiles-input" rows="6" placeholder="C1=CC(=C(C=C1Cl)Cl)Cl..."></textarea>
-            <div class="d-flex gap-2 align-items-stretch mt-2">
-              <button type="button" class="btn btn-ghost" onclick="pasteSampleSMILES()">Paste Sample SMILES</button>
-              <button type="submit" class="btn btn-cta">Predict</button>
-            </div>
-          </div>
-
-          <!-- Output file format -->
-          <div class="col-md-6 mt-2" id="file-selection">
-            <h6 class="mb-2">Select Output File Format:</h6>
-            <div class="form-check">
-              <input type="radio" class="form-check-input" name="output-type" value="CSV" id="out-csv" checked>
-              <label class="form-check-label" for="out-csv">CSV</label>
-            </div>
-            <div class="form-check">
-              <input type="radio" class="form-check-input" name="output-type" value="SDF" id="out-sdf">
-              <label class="form-check-label" for="out-sdf">SDF</label>
-            </div>
-          </div>
-
+        <div class="mt-3 mb-2">
+          <h6>Download Sample Files:</h6>
+          <a href="{{ url_for('toxpro.example_file', format='prediction_csv') }}" class="btn btn-outline-info btn-sm">
+            Download Prediction Sample CSV
+          </a>
+          <a href="{{ url_for('toxpro.example_file', format='prediction_sdf') }}" class="btn btn-outline-info btn-sm ml-2">
+            Download Prediction Sample SDF
+          </a>
         </div>
-      </form>
-
-      {% endif %}
+      </div>
     </div>
   </div>
-</section>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow p-3 mb-5 bg-white rounded" id="prediction-card">
+      <div class="card-body">
+
+        {% if not user_qsar_models %}
+        <div class="row">
+          <div class="col-12">
+            <p>No QSAR models available. Please use "QSAR Builder" to create a QSAR model.</p>
+          </div>
+        </div>
+        {% else %}
+
+        <form id="qsar-form" action="{{ url_for('cheminf.QSAR_predict') }}" method="post" enctype="multipart/form-data">
+          <div class="row">
+
+            <div class="col-md-6">
+              <label for="model-selection">Select QSAR model:</label>
+              <select id="model-selection"
+                      data-placeholder="Choose or type the model name..."
+                      multiple
+                      class="chosen-select form-control"
+                      name="model-selection">
+                {% for qsar_model in user_qsar_models %}
+                <option value="{{ qsar_model.name }}"
+                        {% if selected_model_names and qsar_model.name in selected_model_names %}selected{% endif %}>
+                  {{ qsar_model.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label for="input-method">Input Method:</label>
+              <div class="form-check">
+                <input type="radio" class="form-check-input" name="input-method" value="file" id="method-file" checked>
+                <label class="form-check-label" for="method-file">Upload CSV/SDF File</label>
+              </div>
+              <div class="form-check">
+                <input type="radio" class="form-check-input" name="input-method" value="text" id="method-text">
+                <label class="form-check-label" for="method-text">Paste SMILES</label>
+              </div>
+            </div>
+
+            <div class="col-md-8 mt-3" id="file-input-section">
+              <label for="predict-file">Select CSV or SDF File:</label>
+              <div class="input-group">
+                <input type="file" class="form-control" name="predict-file" id="predict-file">
+                <div class="input-group-append">
+                  <button type="submit" class="btn btn-danger">Predict</button>
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <label for="smiles-column">
+                  SMILES column name in CSV file
+                  <span class="text-muted">(default: SMILES)</span>
+                </label>
+                <input type="text" class="form-control" name="smiles-column" id="smiles-column" placeholder="SMILES">
+              </div>
+            </div>
+
+            <div class="col-md-12 mt-3" id="smiles-text-area" style="display: none;">
+              <label for="smiles-input">Paste up to 100 SMILES, one per line:</label>
+              <textarea class="form-control"
+                        name="smiles-input"
+                        id="smiles-input"
+                        rows="6"
+                        placeholder="C1=CC(=C(C=C1Cl)Cl)Cl"></textarea>
+
+              <div class="d-flex align-items-stretch mt-2">
+                <button type="button" class="btn btn-secondary mr-2" onclick="pasteSampleSMILES()">
+                  Paste Sample SMILES
+                </button>
+                <button type="submit" class="btn btn-danger">
+                  Predict
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if result_rows %}
+<div class="row">
+  <div class="col-12">
+    <div class="card shadow p-3 mb-5 bg-white rounded" id="results-card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+          <div>
+            <h4>Prediction Results</h4>
+            <p class="text-muted mb-2">
+              One row is shown for each query molecule and selected model.
+            </p>
+          </div>
+
+          {% if csv_download_url %}
+          <a id="csv-download-link" href="{{ csv_download_url }}" class="btn btn-success mb-3">
+            Download CSV
+          </a>
+          {% endif %}
+        </div>
+
+        <div class="alert alert-info qsar-small-text">
+          <strong>Closest match</strong> is the most similar chemical from the model training set.
+          <strong>Similarity</strong> is the maximum Tanimoto similarity between the query molecule and
+          the training chemicals. Query molecules below the model threshold are marked as
+          <strong>Outside range</strong>.
+        </div>
+
+        {% if model_thresholds %}
+        <div class="mb-3">
+          <h6 class="mb-2">Model thresholds</h6>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Threshold</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in model_thresholds %}
+                <tr>
+                  <td>{{ item.model }}</td>
+                  <td>{{ item.threshold }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="table-responsive">
+          <table id="qsar-results-table" class="table table-bordered table-hover qsar-results-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Query</th>
+                <th>Prediction</th>
+                <th>Closest match</th>
+                <th>Similarity</th>
+                <th>Domain</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in result_rows %}
+              <tr>
+                <td>{{ row.model }}</td>
+
+                <td>
+                  <div class="qsar-structure">
+                    {{ row.query_svg | safe }}
+                  </div>
+                  <div class="text-muted mt-1 qsar-smiles">
+                    {{ row.query_smiles }}
+                  </div>
+                </td>
+
+                <td>
+                  <strong>{{ row.prediction }}</strong>
+                </td>
+
+                <td>
+                  {% if row.closest_svg %}
+                  <div class="qsar-structure">
+                    {{ row.closest_svg | safe }}
+                  </div>
+                  {% endif %}
+                  <div class="text-muted mt-1 qsar-small-text">
+                    {{ row.closest_id }}
+                  </div>
+                  <div class="text-muted qsar-smiles">
+                    {{ row.closest_smiles }}
+                  </div>
+                </td>
+
+                <td>{{ row.similarity }}</td>
+
+                <td>
+                  {% if row.domain == "Within range" %}
+                    <span class="badge badge-success">Within range</span>
+                  {% elif row.domain == "Outside range" %}
+                    <span class="badge badge-warning">Outside range</span>
+                  {% else %}
+                    <span class="badge badge-secondary">Not available</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <script type="text/javascript">
   $(function () {
-    // Chosen init
-    if ($(".chosen-select").chosen) {
-      $(".chosen-select").chosen({ no_results_text: "Oops, no matching results!", width: "100%" });
-    }
+    $('.chosen-select').chosen({
+      no_results_text: 'Oops, no matching results!',
+      width: '100%'
+    });
 
-    // Toggle input method
     $('input[name="input-method"]').on('change', function () {
       if ($(this).val() === 'text') {
         $('#file-input-section').hide();
@@ -129,29 +280,45 @@
       }
     });
 
-    // Form validation
     $('#qsar-form').on('submit', function (e) {
       const inputMethod = $('input[name="input-method"]:checked').val();
       const selectedModels = $('#model-selection').val();
 
       if (!selectedModels || selectedModels.length === 0) {
-        alert("Please select at least one QSAR model before submitting.");
+        alert('Please select at least one QSAR model before submitting.');
         e.preventDefault();
         return;
       }
 
       if (inputMethod === 'text') {
-        const smilesText = ($('#smiles-input').val() || '').trim();
+        const smilesText = $('#smiles-input').val().trim();
         if (!smilesText) {
-          alert("Please paste at least one SMILES before submitting.");
+          alert('Please paste at least one SMILES before submitting.');
           e.preventDefault();
+          return;
+        }
+      } else {
+        const fileValue = $('#predict-file').val();
+        if (!fileValue) {
+          alert('Please select a CSV or SDF file before submitting.');
+          e.preventDefault();
+          return;
         }
       }
     });
+
+    if ($('#qsar-results-table').length) {
+      $('#qsar-results-table').DataTable({
+        pageLength: 25,
+        order: [[0, 'asc']],
+        autoWidth: false
+      });
+    }
+
   });
 
   function pasteSampleSMILES() {
-    const sample = "C1=CC(=CC=C1C(=C(Cl)Cl)C2=CC=C(C=C2)Cl)Cl\nC1=CC(=C(C=C1Cl)Cl)Cl";
+    const sample = 'C1=CC(=CC=C1C(=C(Cl)Cl)C2=CC=C(C=C2)Cl)Cl\nC1=CC(=C(C=C1Cl)Cl)Cl';
     $('#smiles-input').val(sample);
   }
 </script>

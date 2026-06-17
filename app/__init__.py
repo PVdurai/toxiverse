@@ -17,6 +17,7 @@ def create_app(test_config=None):
 
     app.config.from_mapping(
         SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'toxpro.sqlite'),
+        # SQLALCHEMY_DATABASE_URI='sqlite:////home/karthick/Documents/UI_bala/github-latest/toxiverse/instance/toxpro.sqlite',
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         # SQLite configuration to prevent database locks and corruption
         SQLALCHEMY_ENGINE_OPTIONS={

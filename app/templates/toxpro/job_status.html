@@ -17,6 +17,18 @@
   }
   .tag-badge.alg { background-color: #0d6efd; }   /* algorithm badge: primary */
   .tag-badge.desc { background-color: #212529; }  /* descriptor badge: dark */
+
+  .metric-nowrap{
+    white-space: nowrap;
+    min-width: 105px;
+  }
+  .threshold-nowrap{
+    white-space: nowrap;
+    min-width: 150px;
+  }
+  .metrics-nowrap{
+    white-space: nowrap;
+  }
 </style>
 
 <div class="container-fluid py-5">
@@ -163,11 +175,19 @@
                 {% if qsar_models and qsar_models|length > 0 %}
                   <h5 class="mb-4">Trained Models ({{ qsar_models|length }})</h5>
 
+                  {% macro mean_sd(mean, sd) -%}
+                    {%- if mean is not none -%}
+                      {{ "%.2f"|format(mean) }}{%- if sd is not none -%}&nbsp;&plusmn;&nbsp;{{ "%.2f"|format(sd) }}{%- endif -%}
+                    {%- else -%}
+                      -
+                    {%- endif -%}
+                  {%- endmacro %}
+
+                  {% set has_classification = qsar_models|selectattr('type', 'equalto', 'Classification')|list|length > 0 %}
+                  {% set has_regression = qsar_models|selectattr('type', 'equalto', 'Regression')|list|length > 0 %}
+
                   <!-- Download All Metrics Buttons -->
                   <div class="mb-3">
-                    {% set has_classification = qsar_models|selectattr('type', 'equalto', 'Classification')|list|length > 0 %}
-                    {% set has_regression = qsar_models|selectattr('type', 'equalto', 'Regression')|list|length > 0 %}
-
                     {% if has_classification %}
                       <a href="{{ url_for('cheminf.download_job_metrics', user_id=job.user_id, type='classification', format='csv') }}"
                          class="btn btn-outline-primary btn-sm me-2">
@@ -191,9 +211,6 @@
                     {% endif %}
                   </div>
 
-                  {% set has_classification = qsar_models|selectattr('type', 'equalto', 'Classification')|list|length > 0 %}
-                  {% set has_regression = qsar_models|selectattr('type', 'equalto', 'Regression')|list|length > 0 %}
-
                   <div class="table-responsive">
                     <table class="table table-hover">
                       <thead>
@@ -202,21 +219,22 @@
                           <th>Type</th>
                           {% if has_classification and not has_regression %}
                             <!-- Classification only -->
-                            <th>Accuracy</th>
-                            <th>F1 Score</th>
-                            <th>Precision</th>
-                            <th>Recall</th>
-                            <th>ROC AUC</th>
+                            <th class="metric-nowrap">Accuracy</th>
+                            <th class="metric-nowrap">F1 Score</th>
+                            <th class="metric-nowrap">Precision</th>
+                            <th class="metric-nowrap">Recall</th>
+                            <th class="metric-nowrap">ROC AUC</th>
+                            <th class="threshold-nowrap">Threshold</th>
                           {% elif has_regression and not has_classification %}
                             <!-- Regression only -->
-                            <th>R² Score</th>
-                            <th>Max Error</th>
-                            <th>MSE</th>
-                            <th>MAPE</th>
-                            <th>Pinball Score</th>
+                            <th class="metric-nowrap">R² Score</th>
+                            <th class="metric-nowrap">Max Error</th>
+                            <th class="metric-nowrap">MSE</th>
+                            <th class="metric-nowrap">MAPE</th>
+                            <th class="metric-nowrap">Pinball Score</th>
                           {% else %}
                             <!-- Mixed: Show generic header -->
-                            <th>Metrics</th>
+                            <th class="metrics-nowrap">Metrics</th>
                           {% endif %}
                         </tr>
                       </thead>
@@ -244,43 +262,45 @@
                             {% if model.type == 'Classification' %}
                               {% if has_classification and not has_regression %}
                                 <!-- Classification columns -->
-                                <td>{{ "%.2f"|format(model.cvresults.accuracy) if model.cvresults.accuracy else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.f1_score) if model.cvresults.f1_score else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.precision) if model.cvresults.precision else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.recall) if model.cvresults.recall else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.area_under_roc) if model.cvresults.area_under_roc else '-' }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.accuracy, model.cvresults.accuracy_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.f1_score, model.cvresults.f1_score_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.precision, model.cvresults.precision_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.recall, model.cvresults.recall_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.area_under_roc, model.cvresults.area_under_roc_sd) }}</td>
+                                <td class="threshold-nowrap">{{ "%.2f"|format(model.cvresults.classification_threshold) if model.cvresults.classification_threshold is not none else '-' }}</td>
                               {% else %}
                                 <!-- Mixed mode: show in one cell -->
-                                <td>
-                                  <strong>ACC:</strong> {{ "%.2f"|format(model.cvresults.accuracy) if model.cvresults.accuracy else '-' }} |
-                                  <strong>F1:</strong> {{ "%.2f"|format(model.cvresults.f1_score) if model.cvresults.f1_score else '-' }} |
-                                  <strong>Precision:</strong> {{ "%.2f"|format(model.cvresults.precision) if model.cvresults.precision else '-' }} |
-                                  <strong>Recall:</strong> {{ "%.2f"|format(model.cvresults.recall) if model.cvresults.recall else '-' }} |
-                                  <strong>AUC:</strong> {{ "%.2f"|format(model.cvresults.area_under_roc) if model.cvresults.area_under_roc else '-' }}
+                                <td class="metrics-nowrap">
+                                  <strong>ACC:</strong> {{ mean_sd(model.cvresults.accuracy, model.cvresults.accuracy_sd) }} |
+                                  <strong>F1:</strong> {{ mean_sd(model.cvresults.f1_score, model.cvresults.f1_score_sd) }} |
+                                  <strong>Precision:</strong> {{ mean_sd(model.cvresults.precision, model.cvresults.precision_sd) }} |
+                                  <strong>Recall:</strong> {{ mean_sd(model.cvresults.recall, model.cvresults.recall_sd) }} |
+                                  <strong>AUC:</strong> {{ mean_sd(model.cvresults.area_under_roc, model.cvresults.area_under_roc_sd) }} |
+                                  <strong>Threshold:</strong> {{ "%.2f"|format(model.cvresults.classification_threshold) if model.cvresults.classification_threshold is not none else '-' }}
                                 </td>
                               {% endif %}
                             {% elif model.type == 'Regression' %}
                               {% if has_regression and not has_classification %}
                                 <!-- Regression columns -->
-                                <td>{{ "%.2f"|format(model.cvresults.r2_score) if model.cvresults.r2_score else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.max_error) if model.cvresults.max_error else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.mean_squared_error) if model.cvresults.mean_squared_error else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.mean_absolute_percentage_error) if model.cvresults.mean_absolute_percentage_error else '-' }}</td>
-                                <td>{{ "%.2f"|format(model.cvresults.pinball_score) if model.cvresults.pinball_score else '-' }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.r2_score, model.cvresults.r2_score_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.max_error, model.cvresults.max_error_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.mean_squared_error, model.cvresults.mean_squared_error_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.mean_absolute_percentage_error, model.cvresults.mean_absolute_percentage_error_sd) }}</td>
+                                <td class="metric-nowrap">{{ mean_sd(model.cvresults.pinball_score, model.cvresults.pinball_score_sd) }}</td>
                               {% else %}
                                 <!-- Mixed mode: show in one cell -->
-                                <td>
-                                  <strong>R²:</strong> {{ "%.2f"|format(model.cvresults.r2_score) if model.cvresults.r2_score else '-' }} |
-                                  <strong>Max Error:</strong> {{ "%.2f"|format(model.cvresults.max_error) if model.cvresults.max_error else '-' }} |
-                                  <strong>MSE:</strong> {{ "%.2f"|format(model.cvresults.mean_squared_error) if model.cvresults.mean_squared_error else '-' }} |
-                                  <strong>MAPE:</strong> {{ "%.2f"|format(model.cvresults.mean_absolute_percentage_error) if model.cvresults.mean_absolute_percentage_error else '-' }} |
-                                  <strong>Pinball:</strong> {{ "%.2f"|format(model.cvresults.pinball_score) if model.cvresults.pinball_score else '-' }}
+                                <td class="metrics-nowrap">
+                                  <strong>R²:</strong> {{ mean_sd(model.cvresults.r2_score, model.cvresults.r2_score_sd) }} |
+                                  <strong>Max Error:</strong> {{ mean_sd(model.cvresults.max_error, model.cvresults.max_error_sd) }} |
+                                  <strong>MSE:</strong> {{ mean_sd(model.cvresults.mean_squared_error, model.cvresults.mean_squared_error_sd) }} |
+                                  <strong>MAPE:</strong> {{ mean_sd(model.cvresults.mean_absolute_percentage_error, model.cvresults.mean_absolute_percentage_error_sd) }} |
+                                  <strong>Pinball:</strong> {{ mean_sd(model.cvresults.pinball_score, model.cvresults.pinball_score_sd) }}
                                 </td>
                               {% endif %}
                             {% endif %}
                           {% else %}
                             {% if has_classification and not has_regression %}
-                              <td colspan="5"><span class="text-muted">N/A</span></td>
+                              <td colspan="6"><span class="text-muted">N/A</span></td>
                             {% elif has_regression and not has_classification %}
                               <td colspan="5"><span class="text-muted">N/A</span></td>
                             {% else %}

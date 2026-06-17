@@ -9,7 +9,7 @@
         <span class="dot"></span> ToxiVerse Database
       </div>
       <p class="mb-0 subtle">
-        Explore over <strong>50,000</strong> chemicals across <strong>15</strong> datasets covering
+        Explore over <strong>50,000</strong> chemicals across <strong>16</strong> datasets covering
         50+ endpoints mainly related to toxicity. View relevant PubChem bioassays (ranked by active rate) and download any dataset below.
         Details on collection procedures, sources, and endpoint definitions are under <em>Database → Resources</em>.
       </p>
@@ -24,7 +24,7 @@
       <!-- PCA -->
       <div class="col-lg-6 mb-4 mb-lg-0">
         <div class="tv-card p-4 h-100">
-          <h4 class="mb-3">Principal Component Analysis</h4>
+          <h4 class="mb-3">Chemical space based on structural principal component analysis</h4>
           <div id="pca-wrapper">
             <div id="3d-pca" class="chart" style="height: 450px; width: 100%;" aria-label="3D PCA plot"></div>
           </div>
@@ -39,7 +39,7 @@
       <!-- Histogram -->
       <div class="col-lg-6">
         <div class="tv-card p-4 h-100">
-          <h4 class="mb-3">Endpoint Distribution</h4>
+          <h4 class="mb-3">Endpoint data distribution</h4>
           <label for="endpoint-selection" class="font-weight-600">Select endpoint:</label>
           <select class="form-control mb-3" id="endpoint-selection" name="endpoint-selection">
             {% for endpoint in endpoints %}
@@ -63,7 +63,7 @@
         <h4 class="mb-2">Relevant Bioassays</h4>
         <p class="mb-3 subtle">
           Bioassays are ranked by active rate (<code>Active / (Active + Inactive)</code>) for the selected endpoint.
-          Assays with ≥1 Active are included. To stabilize small-sample assays, we used Bayesian-adjusted scores and
+          Assays with Active + Inactive ≥500 are included. To stabilize small-sample assays, we used Bayesian-adjusted scores and
           retaind up to the top 500 assays per endpoint. Inconclusive results are shown but excluded from calculations.
         </p>
 

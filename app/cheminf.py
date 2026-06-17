@@ -883,20 +883,28 @@ def download_model_metrics(model_id):
     writer.writerow(['Type', model.type])
     writer.writerow([''])  # Empty row
 
+    def _fmt_mean_sd(mean, sd):
+        if mean is None:
+            return ''
+        if sd is None:
+            return f"{mean:.4f}"
+        return f"{mean:.4f} +/- {sd:.4f}"
+
     if model.type == 'Classification':
-        writer.writerow(['Accuracy', f"{model.cvresults.accuracy:.4f}"])
-        writer.writerow(['F1 Score', f"{model.cvresults.f1_score:.4f}"])
-        writer.writerow(['Precision', f"{model.cvresults.precision:.4f}"])
-        writer.writerow(['Recall', f"{model.cvresults.recall:.4f}"])
-        writer.writerow(['ROC AUC', f"{model.cvresults.area_under_roc:.4f}"])
-        writer.writerow(['Specificity', f"{model.cvresults.specificity:.4f}"])
-        writer.writerow(['CCR', f"{model.cvresults.correct_classification_rate:.4f}"])
+        writer.writerow(['Accuracy', _fmt_mean_sd(model.cvresults.accuracy, model.cvresults.accuracy_sd)])
+        writer.writerow(['F1 Score', _fmt_mean_sd(model.cvresults.f1_score, model.cvresults.f1_score_sd)])
+        writer.writerow(['Precision', _fmt_mean_sd(model.cvresults.precision, model.cvresults.precision_sd)])
+        writer.writerow(['Recall', _fmt_mean_sd(model.cvresults.recall, model.cvresults.recall_sd)])
+        writer.writerow(['ROC AUC', _fmt_mean_sd(model.cvresults.area_under_roc, model.cvresults.area_under_roc_sd)])
+        writer.writerow(['Specificity', _fmt_mean_sd(model.cvresults.specificity, model.cvresults.specificity_sd)])
+        writer.writerow(['CCR', _fmt_mean_sd(model.cvresults.correct_classification_rate, model.cvresults.correct_classification_rate_sd)])
+        writer.writerow(['Classification threshold', f"{model.cvresults.classification_threshold:.4f}" if model.cvresults.classification_threshold is not None else ''])
     else:  # Regression
-        writer.writerow(['R² Score', f"{model.cvresults.r2_score:.4f}"])
-        writer.writerow(['Max Error', f"{model.cvresults.max_error:.4f}"])
-        writer.writerow(['Mean Squared Error', f"{model.cvresults.mean_squared_error:.4f}"])
-        writer.writerow(['MAPE', f"{model.cvresults.mean_absolute_percentage_error:.4f}"])
-        writer.writerow(['Pinball Score', f"{model.cvresults.pinball_score:.4f}"])
+        writer.writerow(['R² Score', _fmt_mean_sd(model.cvresults.r2_score, model.cvresults.r2_score_sd)])
+        writer.writerow(['Max Error', _fmt_mean_sd(model.cvresults.max_error, model.cvresults.max_error_sd)])
+        writer.writerow(['Mean Squared Error', _fmt_mean_sd(model.cvresults.mean_squared_error, model.cvresults.mean_squared_error_sd)])
+        writer.writerow(['MAPE', _fmt_mean_sd(model.cvresults.mean_absolute_percentage_error, model.cvresults.mean_absolute_percentage_error_sd)])
+        writer.writerow(['Pinball Score', _fmt_mean_sd(model.cvresults.pinball_score, model.cvresults.pinball_score_sd)])
 
     # Convert to bytes
     output.seek(0)
@@ -908,85 +916,440 @@ def download_model_metrics(model_id):
                      as_attachment=True,
                      download_name=f"{model.name}_metrics.csv",
                      mimetype="text/csv")
+    
+    # Required additional imports near the top of app/app/cheminf.py
+# import uuid
+# import numpy as np
+# from rdkit.Chem.Draw import rdMolDraw2D
+# from rdkit.Chem import rdDepictor
+
+
+def _sanitize_smiles_series(series):
+    """Coerce a pandas Series to clean SMILES strings and mark placeholders as missing."""
+    import pandas as pd
+
+    s = series.astype(object)
+
+    def _coerce(value):
+        if value is None:
+            return None
+        if isinstance(value, float) and pd.isna(value):
+            return None
+        return str(value).strip()
+
+    s = s.map(_coerce)
+    return s.replace({'', 'nan', 'NaN', 'NONE', 'None', 'NULL', 'null'}, None)
+
+
+def _mol_to_svg(mol, width=180, height=130):
+    """Return an RDKit SVG string for a molecule for display in Jinja templates."""
+    from rdkit import Chem
+    from rdkit.Chem.Draw import rdMolDraw2D
+    from rdkit.Chem import rdDepictor
+
+    if mol is None:
+        return ""
+
+    mol_for_drawing = Chem.Mol(mol)
+    try:
+        rdDepictor.Compute2DCoords(mol_for_drawing)
+    except Exception:
+        pass
+
+    drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
+    rdMolDraw2D.PrepareAndDrawMolecule(drawer, mol_for_drawing)
+    drawer.FinishDrawing()
+    return drawer.GetDrawingText().replace("svg:", "")
+
+
+def _similarity_fingerprint(mol, radius=3, n_bits=1024):
+    """Morgan/ECFP6-like fingerprint used for applicability-domain similarity."""
+    from rdkit.Chem import AllChem
+
+    if mol is None:
+        return None
+    return AllChem.GetMorganFingerprintAsBitVect(
+        mol,
+        radius=radius,
+        nBits=n_bits,
+        useFeatures=False,
+    )
+
+
+
+
+def _format_closest_compound_id(compound_id):
+    """Display numeric PubChem compound IDs as CID84677 instead of 84677."""
+    if compound_id is None:
+        return 'Not available'
+
+    value = str(compound_id).strip()
+    if not value:
+        return 'Not available'
+
+    if value.lower().startswith('cid'):
+        return 'CID' + value[3:].strip()
+
+    # Convert values such as 84677 or 84677.0 to CID84677.
+    try:
+        numeric_value = float(value)
+        if numeric_value.is_integer():
+            return f'CID{int(numeric_value)}'
+    except Exception:
+        pass
+
+    if value.isdigit():
+        return f'CID{value}'
+
+    return value
+
+
+def _result_rows_to_model_thresholds(result_rows):
+    """Return one threshold row per model for display above the results table."""
+    threshold_by_model = {}
+
+    for row in result_rows:
+        model = row.get('model')
+        threshold = row.get('threshold', 'Not available')
+        if model and model not in threshold_by_model:
+            threshold_by_model[model] = threshold
+
+    return [
+        {'model': model, 'threshold': threshold}
+        for model, threshold in threshold_by_model.items()
+    ]
+
+def _build_prediction_features(mols_df, descriptor_type):
+    """Build model input features using the same descriptor families as QSAR Builder."""
+    import numpy as np
+    import pandas as pd
+    from rdkit.Chem import AllChem, DataStructs
+    from rdkit.ML.Descriptors import MoleculeDescriptors
+    from rdkit.Chem import Descriptors
+
+    descriptor_type = (descriptor_type or '').strip()
+
+    if descriptor_type in ['ECFP6', 'FCFP6']:
+        n_bits = 1024
+        use_features = descriptor_type == 'FCFP6'
+        fps = []
+        ids = []
+
+        for mol, compound_id in zip(mols_df['ROMol'], mols_df['compound_id']):
+            if mol is None:
+                continue
+            fp = AllChem.GetMorganFingerprintAsBitVect(
+                mol,
+                radius=3,
+                nBits=n_bits,
+                useFeatures=use_features,
+            )
+            arr = np.zeros((n_bits,), dtype=float)
+            DataStructs.ConvertToNumpyArray(fp, arr)
+            fps.append(arr)
+            ids.append(compound_id)
+
+        return pd.DataFrame(fps, index=ids)
+
+    desc_list = [desc[0] for desc in Descriptors.descList]
+    calc = MoleculeDescriptors.MolecularDescriptorCalculator(desc_list)
+    descs = []
+    ids = []
+
+    for mol, compound_id in zip(mols_df['ROMol'], mols_df['compound_id']):
+        if mol is None:
+            continue
+        descs.append(calc.CalcDescriptors(mol))
+        ids.append(compound_id)
+
+    X_predict = pd.DataFrame(descs, index=ids, columns=calc.GetDescriptorNames())
+    X_predict = X_predict.replace([np.inf, -np.inf], np.nan).dropna(axis=0)
+    return X_predict
+
+
+def _get_training_space(qsar_model):
+    """Return valid training-set molecules and fingerprints for one QSAR model."""
+    from rdkit import Chem
+    from app.db_models import Chemical
+
+    training_chemicals = Chemical.query.filter_by(dataset_id=qsar_model.dataset_id).all()
+    training_space = []
+
+    for chemical in training_chemicals:
+        if not chemical.inchi:
+            continue
+
+        mol = Chem.MolFromInchi(chemical.inchi)
+        if mol is None:
+            continue
+
+        fingerprint = _similarity_fingerprint(mol)
+        if fingerprint is None:
+            continue
+
+        training_space.append({
+            'compound_id': chemical.compound_id or f'training_{chemical.id}',
+            'mol': mol,
+            'smiles': Chem.MolToSmiles(mol, isomericSmiles=True),
+            'fingerprint': fingerprint,
+        })
+
+    return training_space
+
+
+def _leave_one_out_similarity_threshold(training_space, percentile=5):
+    """Calculate a model-specific applicability-domain threshold."""
+    import numpy as np
+    from rdkit import DataStructs
+
+    if len(training_space) < 2:
+        return None
+
+    nearest_values = []
+    for i, item in enumerate(training_space):
+        other_fps = [
+            other['fingerprint']
+            for j, other in enumerate(training_space)
+            if j != i
+        ]
+        similarities = DataStructs.BulkTanimotoSimilarity(item['fingerprint'], other_fps)
+        if similarities:
+            nearest_values.append(max(similarities))
+
+    if not nearest_values:
+        return None
+
+    return float(np.percentile(nearest_values, percentile))
+
+
+def _closest_training_match(query_mol, training_space):
+    """Find the most similar training-set chemical for a query molecule."""
+    import numpy as np
+    from rdkit import DataStructs
+
+    query_fp = _similarity_fingerprint(query_mol)
+    if query_fp is None or not training_space:
+        return None, None
+
+    training_fps = [item['fingerprint'] for item in training_space]
+    similarities = DataStructs.BulkTanimotoSimilarity(query_fp, training_fps)
+
+    if not similarities:
+        return None, None
+
+    best_index = int(np.argmax(similarities))
+    return training_space[best_index], float(similarities[best_index])
+
+
+def _format_prediction(qsar_model, value):
+    """Format prediction values for display and CSV export."""
+    import numpy as np
+
+    if value is None:
+        return 'Not available'
+
+    model_type = (qsar_model.type or '').strip().lower()
+    if model_type == 'classification':
+        try:
+            return 'Active' if int(value) == 1 else 'Inactive'
+        except Exception:
+            return str(value)
+
+    try:
+        if isinstance(value, (float, np.floating)):
+            return round(float(value), 4)
+    except Exception:
+        pass
+
+    return value
+
+
+def _build_qsar_result_rows(mols_df, model_names, user_id):
+    """Run selected models and build rows for the HTML table and CSV download."""
+    import pickle
+    import pandas as pd
+    from app.db_models import QSARModel
+
+    result_rows = []
+    prediction_errors = []
+
+    for model_name in model_names:
+        qsar_model = QSARModel.query.filter_by(
+            user_id=user_id,
+            name=model_name,
+        ).first()
+
+        if qsar_model is None:
+            prediction_errors.append(f"Model '{model_name}' was not found.")
+            continue
+
+        try:
+            sklearn_model = pickle.loads(qsar_model.sklearn_model)
+            X_predict = _build_prediction_features(mols_df, qsar_model.descriptors)
+        except Exception as error:
+            prediction_errors.append(f"Could not prepare input features for model '{model_name}': {error}")
+            continue
+
+        if X_predict.empty:
+            prediction_errors.append(f"No valid feature rows were generated for model '{model_name}'.")
+            continue
+
+        try:
+            if (qsar_model.type or '').strip() == 'Classification' and hasattr(sklearn_model, 'predict_proba'):
+                class_threshold = 0.5
+                if qsar_model.cvresults and qsar_model.cvresults.classification_threshold is not None:
+                    class_threshold = float(qsar_model.cvresults.classification_threshold)
+
+                y_prob = sklearn_model.predict_proba(X_predict)[:, 1]
+                y_pred = (y_prob >= class_threshold).astype(int)
+            else:
+                y_pred = sklearn_model.predict(X_predict)
+
+            prediction_by_id = pd.Series(y_pred, index=X_predict.index)
+        except Exception as error:
+            prediction_errors.append(f"Prediction failed for model '{model_name}': {error}")
+            continue
+
+        training_space = _get_training_space(qsar_model)
+        threshold = _leave_one_out_similarity_threshold(training_space)
+
+        for _, query_row in mols_df.iterrows():
+            compound_id = query_row['compound_id']
+            if compound_id not in prediction_by_id.index:
+                continue
+
+            query_mol = query_row['ROMol']
+            query_smiles = query_row.get('SMILES') or ''
+            closest_match, max_similarity = _closest_training_match(query_mol, training_space)
+
+            if closest_match is None:
+                closest_svg = ''
+                closest_id = 'Not available'
+                closest_smiles = ''
+                similarity_display = 'Not available'
+                threshold_display = 'Not available'
+                domain = 'Not available'
+            else:
+                closest_svg = _mol_to_svg(closest_match['mol'])
+                closest_id = _format_closest_compound_id(closest_match['compound_id'])
+                closest_smiles = closest_match['smiles']
+                similarity_display = round(max_similarity, 3)
+
+                if threshold is None:
+                    threshold_display = 'Not available'
+                    domain = 'Not available'
+                else:
+                    threshold_display = round(threshold, 3)
+                    domain = 'Within range' if max_similarity >= threshold else 'Outside range'
+
+            result_rows.append({
+                'model': qsar_model.name,
+                'query_svg': _mol_to_svg(query_mol),
+                'query_smiles': query_smiles,
+                'prediction': _format_prediction(qsar_model, prediction_by_id.loc[compound_id]),
+                'closest_svg': closest_svg,
+                'closest_id': closest_id,
+                'closest_smiles': closest_smiles,
+                'similarity': similarity_display,
+                'threshold': threshold_display,
+                'domain': domain,
+            })
+
+    return result_rows, prediction_errors
+
+
+def _result_rows_to_csv_frame(result_rows):
+    """Create the mandatory downloadable CSV from the displayed result rows."""
+    import pandas as pd
+
+    return pd.DataFrame([
+        {
+            'Model': row['model'],
+            'Query SMILES': row['query_smiles'],
+            'Prediction': row['prediction'],
+            'Closest match ID': row['closest_id'],
+            'Closest match SMILES': row['closest_smiles'],
+            'Similarity': row['similarity'],
+            'Threshold': row['threshold'],
+            'Domain': row['domain'],
+        }
+        for row in result_rows
+    ])
+
+
+def _save_qsar_csv_for_download(result_rows, base_name, user_id):
+    """Save CSV in a user-specific directory and return a simple download filename."""
+    import os
+    from flask import current_app
+    from werkzeug.utils import secure_filename
+
+    download_dir = os.path.join(
+        current_app.instance_path,
+        'qsar_prediction_downloads',
+        f'user_{user_id}'
+    )
+    os.makedirs(download_dir, exist_ok=True)
+
+    safe_base = secure_filename(base_name or 'qsar_results') or 'qsar_results'
+    filename = secure_filename(f'{safe_base}_qsar_results.csv')
+    output_path = os.path.join(download_dir, filename)
+
+    csv_df = _result_rows_to_csv_frame(result_rows)
+    csv_df.to_csv(output_path, index=False)
+
+    return filename
 
 
 @bp.route('/QSAR-predict', methods=('GET', 'POST'))
+@login_required
 def QSAR_predict():
-    """Predict activity of molecules using selected QSAR models."""
-    from rdkit import Chem
-    from rdkit.Chem import PandasTools
-    from rdkit.Chem import AllChem, DataStructs
-    import numpy as np
-    import io
-    import os
-    import pickle
-    from flask_login import current_user
+    """Predict activity and display table results with mandatory CSV download."""
 
-    EXCLUDED_SDF_PROPS = {'Name', '_Name'}  # Exclude these from SDF original cols and export
+    user_qsar_models = list(
+        QSARModel.query.filter_by(user_id=current_user.id).order_by(QSARModel.name).all()
+    )
 
-    # Get session_id from request parameter or use current user's session_id
-    session_id = request.args.get('session_id', type=str)
-
-    if session_id is None and current_user.is_authenticated:
-        # Get the session_id from the current user's record
-        session_id = current_user.session_id
-
-    # Get models for users with this session_id
-    if session_id is not None:
-        # Find user(s) with this session_id
-        user = User.query.filter_by(session_id=session_id).first()
-        if user:
-            user_qsar_models = QSARModel.query.filter_by(user_id=user.id).order_by(QSARModel.created.desc()).all()
-        else:
-            user_qsar_models = []
-    else:
-        user_qsar_models = []
+    template_context = {
+        'user_qsar_models': user_qsar_models,
+        'result_rows': [],
+        'csv_download_url': None,
+        'selected_model_names': [],
+        'model_thresholds': [],
+    }
 
     if request.method == 'GET':
-        return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+        return render_template('cheminf/QSAR-predict.html', **template_context)
 
     model_names = request.form.getlist('model-selection')
-    output_type = request.form['output-type'].strip()
     input_method = request.form.get('input-method', 'file')
+    template_context['selected_model_names'] = model_names
 
-    def _sanitize_smiles_series(series):
-        """Coerce to strings, trim, null-out placeholders, keep None for missing."""
-        s = series.astype(object)
-
-        def _coerce(v):
-            if v is None:
-                return None
-            if isinstance(v, float) and pd.isna(v):
-                return None
-            return str(v).strip()
-
-        s = s.map(_coerce)
-        s = s.replace({'', 'nan', 'NaN', 'NONE', 'None', 'NULL', 'null'}, None)
-        return s
+    if not model_names:
+        flash('Please select at least one QSAR model before submitting.', 'danger')
+        return render_template('cheminf/QSAR-predict.html', **template_context)
 
     error = None
     removed_empty_or_placeholder = 0
     removed_unparsable = 0
     source_rows = 0
-    warn_msg = None
-    original_cols_from_upload = None
+    base_name = 'qsar_prediction'
 
     if input_method == 'text':
         smiles_input = request.form.get('smiles-input', '').strip().splitlines()
-        smiles_input = [s.strip() for s in smiles_input if s.strip()]
+        smiles_input = [smiles.strip() for smiles in smiles_input if smiles.strip()]
 
         if not smiles_input:
-            flash("No SMILES provided.", 'danger')
-            return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+            flash('No SMILES provided.', 'danger')
+            return render_template('cheminf/QSAR-predict.html', **template_context)
 
         if len(smiles_input) > 100:
-            flash("Maximum number of molecules allowed is 100.", 'danger')
-            return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+            flash('Maximum number of molecules allowed is 100.', 'danger')
+            return render_template('cheminf/QSAR-predict.html', **template_context)
 
         source_rows = len(smiles_input)
         mols_df = pd.DataFrame({'SMILES': smiles_input})
-
         mols_df['SMILES'] = _sanitize_smiles_series(mols_df['SMILES'])
+
         mask_bad = mols_df['SMILES'].isna()
         if mask_bad.any():
             removed_empty_or_placeholder = int(mask_bad.sum())
@@ -998,27 +1361,26 @@ def QSAR_predict():
             removed_unparsable = int(mask_fail.sum())
             mols_df = mols_df.loc[~mask_fail].copy()
 
-        original_cols_from_upload = ['SMILES']
         base_name = 'pasted_smiles'
 
     else:
-        sdfile = request.files['predict-file']
-        smiles_col = request.form['smiles-column'].strip() or 'SMILES'
+        uploaded_file = request.files.get('predict-file')
+        smiles_col = request.form.get('smiles-column', '').strip() or 'SMILES'
 
-        if not sdfile:
-            error = "No SDFile or CSV file was attached."
+        if not uploaded_file or uploaded_file.filename == '':
+            error = 'No CSV or SDF file was attached.'
         else:
-            file_ext = sdfile.filename.rsplit('.', 1)[-1].lower()
+            file_ext = uploaded_file.filename.rsplit('.', 1)[-1].lower()
             if file_ext not in ['csv', 'sdf']:
-                error = "Only CSV or SDF files are accepted."
+                error = 'Only CSV or SDF files are accepted.'
 
         if error:
             flash(error, 'danger')
-            return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+            return render_template('cheminf/QSAR-predict.html', **template_context)
 
-        uploaded_path = os.path.join(current_app.instance_path, secure_filename(sdfile.filename))
-        sdfile.save(uploaded_path)
-        base_name = os.path.splitext(os.path.basename(sdfile.filename))[0]
+        uploaded_path = os.path.join(current_app.instance_path, secure_filename(uploaded_file.filename))
+        uploaded_file.save(uploaded_path)
+        base_name = os.path.splitext(os.path.basename(uploaded_file.filename))[0]
 
         try:
             if file_ext == 'csv':
@@ -1026,9 +1388,8 @@ def QSAR_predict():
                 source_rows = df_tmp.shape[0]
 
                 if smiles_col not in df_tmp.columns:
-                    os.remove(uploaded_path)
                     flash(f"SMILES column '{smiles_col}' not found in the uploaded CSV.", 'danger')
-                    return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+                    return render_template('cheminf/QSAR-predict.html', **template_context)
 
                 df_tmp[smiles_col] = _sanitize_smiles_series(df_tmp[smiles_col])
                 mask_bad = df_tmp[smiles_col].isna()
@@ -1037,9 +1398,8 @@ def QSAR_predict():
                     df_tmp = df_tmp.loc[~mask_bad].copy()
 
                 if df_tmp.empty:
-                    os.remove(uploaded_path)
-                    flash("All input rows were empty or invalid for SMILES.", 'danger')
-                    return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+                    flash('All input rows were empty or invalid for SMILES.', 'danger')
+                    return render_template('cheminf/QSAR-predict.html', **template_context)
 
                 PandasTools.AddMoleculeColumnToFrame(df_tmp, smilesCol=smiles_col)
                 mask_fail = df_tmp['ROMol'].isna()
@@ -1047,177 +1407,182 @@ def QSAR_predict():
                     removed_unparsable = int(mask_fail.sum())
                     df_tmp = df_tmp.loc[~mask_fail].copy()
 
+                if smiles_col != 'SMILES':
+                    df_tmp['SMILES'] = df_tmp[smiles_col]
+
                 mols_df = df_tmp
-                original_cols_from_upload = list(df_tmp.columns)
-                if 'ROMol' in original_cols_from_upload:
-                    original_cols_from_upload.remove('ROMol')
 
             else:
-                try:
-                    suppl = Chem.SDMolSupplier(uploaded_path, sanitize=False, removeHs=False)
-                except Exception as e:
-                    os.remove(uploaded_path)
-                    flash(f"Could not open SDF: {e}", 'danger')
-                    return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
-
+                suppl = Chem.SDMolSupplier(
+                    uploaded_path,
+                    sanitize=False,
+                    removeHs=False,
+                    strictParsing=False
+                )
                 rows = []
                 source_rows = 0
+
+                smiles_property_names = (
+                    'SMILES',
+                    'Smiles',
+                    'smiles',
+                    'CANONICAL_SMILES',
+                    'Canonical_SMILES',
+                    'canonical_smiles',
+                )
+
                 for mol in suppl:
                     source_rows += 1
+
                     if mol is None:
                         removed_unparsable += 1
                         continue
+
                     try:
-                        Chem.SanitizeMol(mol)
+                        props = mol.GetPropsAsDict(includePrivate=False, includeComputed=False)
+                        smiles = ''
+
+                        # Case 1: normal SDF with atom/bond block.
+                        if mol.GetNumAtoms() > 0:
+                            try:
+                                Chem.SanitizeMol(mol)
+
+                                try:
+                                    mol = Chem.RemoveHs(mol)
+                                except Exception:
+                                    pass
+
+                                smiles = Chem.MolToSmiles(mol, isomericSmiles=True).strip()
+                            except Exception:
+                                smiles = ''
+
+                        # Case 2: sample/prediction SDF with empty mol block but SMILES stored as a property.
+                        if not smiles:
+                            for prop_name in smiles_property_names:
+                                if mol.HasProp(prop_name):
+                                    smiles = str(mol.GetProp(prop_name)).strip()
+                                    break
+
+                        # Extra fallback in case RDKit changes property-name capitalization.
+                        if not smiles:
+                            for key, value in props.items():
+                                if str(key).strip().lower() == 'smiles':
+                                    smiles = str(value).strip()
+                                    break
+
+                        if not smiles:
+                            removed_unparsable += 1
+                            continue
+
+                        clean_mol = Chem.MolFromSmiles(smiles, sanitize=True)
+
+                        if clean_mol is None or clean_mol.GetNumAtoms() == 0:
+                            removed_unparsable += 1
+                            continue
+
+                        clean_smiles = Chem.MolToSmiles(clean_mol, isomericSmiles=True)
+
                     except Exception:
                         removed_unparsable += 1
                         continue
-                    props = mol.GetPropsAsDict(includePrivate=False, includeComputed=False)
-                    props['ROMol'] = mol
+
+                    props['ROMol'] = clean_mol
+                    props['SMILES'] = clean_smiles
                     rows.append(props)
 
                 if not rows:
-                    os.remove(uploaded_path)
-                    flash("All SDF records were invalid or failed sanitization.", 'danger')
-                    return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+                    flash(
+                        'No valid molecules were found in the SDF. The file must contain either '
+                        'a valid atom/bond structure block or a valid SMILES property.',
+                        'danger'
+                    )
+                    return render_template('cheminf/QSAR-predict.html', **template_context)
 
                 mols_df = pd.DataFrame(rows)
-                original_cols_from_upload = [c for c in mols_df.columns
-                                             if c != 'ROMol' and c not in EXCLUDED_SDF_PROPS]
         finally:
             if os.path.exists(uploaded_path):
                 os.remove(uploaded_path)
 
     if mols_df.empty:
         flash('No valid chemicals found after filtering invalid or unparsable SMILES.', 'danger')
-        return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
-
-    mols_df['compound_id'] = [f'mol_{i}' for i in range(mols_df.shape[0])]
-    mols_df['inchi'] = [Chem.MolToInchi(mol) for mol in mols_df['ROMol']]
+        return render_template('cheminf/QSAR-predict.html', **template_context)
 
     if mols_df.shape[0] > 100:
         flash('Maximum number of molecules allowed is 100 after filtering.', 'danger')
-        return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+        return render_template('cheminf/QSAR-predict.html', **template_context)
+
+    mols_df = mols_df.reset_index(drop=True)
+    mols_df['compound_id'] = [f'mol_{i + 1}' for i in range(mols_df.shape[0])]
+    mols_df['inchi'] = [Chem.MolToInchi(mol) for mol in mols_df['ROMol']]
 
     if removed_empty_or_placeholder or removed_unparsable:
-        msgs = []
+        messages = []
         if removed_empty_or_placeholder:
-            msgs.append(f"{removed_empty_or_placeholder} row(s) with empty/placeholder SMILES were ignored.")
+            messages.append(
+                f'{removed_empty_or_placeholder} row(s) with empty/placeholder SMILES were ignored.'
+            )
         if removed_unparsable:
-            msgs.append(f"{removed_unparsable} row(s) had molecules that RDKit could not parse and were ignored.")
-        msgs.append(f"Processed {mols_df.shape[0]} molecule(s) out of {source_rows}.")
-        warn_msg = " ".join(msgs)
+            messages.append(
+                f'{removed_unparsable} row(s) had SMILES/molecules that RDKit could not parse and were ignored.'
+            )
+        messages.append(f'Processed {mols_df.shape[0]} molecule(s) out of {source_rows}.')
+        flash(' '.join(messages), 'warning')
 
-    prediction_df = mols_df.copy()
+    result_rows, prediction_errors = _build_qsar_result_rows(
+        mols_df=mols_df,
+        model_names=model_names,
+        user_id=current_user.id,
+    )
 
-    for model_name in model_names:
-        qsar_model = QSARModel.query.filter_by(name=model_name).first()
-        if qsar_model is None:
-            flash(f"Model '{model_name}' was not found.", 'danger')
-            continue
+    for prediction_error in prediction_errors:
+        flash(prediction_error, 'danger')
 
-        sklearn_model = pickle.loads(qsar_model.sklearn_model)
-        descriptor_type = (qsar_model.descriptors or '').strip().lower()
+    if not result_rows:
+        flash('No predictions were generated. Check the selected models and input structures.', 'danger')
+        return render_template('cheminf/QSAR-predict.html', **template_context)
 
-        if descriptor_type == 'ecfp6':
-            nBits = 1024
-            fps = []
-            for mol in prediction_df['ROMol']:
-                fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=nBits, useFeatures=False)
-                arr = np.zeros((nBits,), dtype=int)
-                DataStructs.ConvertToNumpyArray(fp, arr)
-                fps.append(arr)
-            X_predict = pd.DataFrame(fps, index=prediction_df['compound_id'])
+    csv_filename = _save_qsar_csv_for_download(
+        result_rows=result_rows,
+        base_name=base_name,
+        user_id=current_user.id,
+    )
 
-        elif descriptor_type == 'fcfp6':
-            nBits = 1024
-            fps = []
-            for mol in prediction_df['ROMol']:
-                fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=3, nBits=nBits, useFeatures=True)
-                arr = np.zeros((nBits,), dtype=int)
-                DataStructs.ConvertToNumpyArray(fp, arr)
-                fps.append(arr)
-            X_predict = pd.DataFrame(fps, index=prediction_df['compound_id'])
+    template_context['result_rows'] = result_rows
+    template_context['model_thresholds'] = _result_rows_to_model_thresholds(result_rows)
+    template_context['csv_download_url'] = url_for(
+        'cheminf.QSAR_predict_download_csv',
+        filename=csv_filename,
+    )
 
-        else:
-            from rdkit.ML.Descriptors import MoleculeDescriptors
-            from rdkit.Chem import Descriptors
+    flash('Prediction results are displayed below. Use the Download CSV button to save the results.', 'success')
+    return render_template('cheminf/QSAR-predict.html', **template_context)
 
-            desc_list = [desc[0] for desc in Descriptors.descList]
-            calc = MoleculeDescriptors.MolecularDescriptorCalculator(desc_list)
 
-            descs = []
-            ids = []
-            for mol, cid in zip(prediction_df['ROMol'], prediction_df['compound_id']):
-                if mol is not None:
-                    descs.append(calc.CalcDescriptors(mol))
-                    ids.append(cid)
+@bp.route('/QSAR-predict/download/<path:filename>')
+@login_required
+def QSAR_predict_download_csv(filename):
+    """Download the CSV generated by QSAR Predictor."""
+    safe_filename = os.path.basename(filename)
 
-            X_predict = pd.DataFrame(descs, index=ids, columns=calc.GetDescriptorNames())
+    # Each user's file is saved in a user-specific folder. This keeps the
+    # downloaded filename clean, for example pasted_smiles_qsar_results.csv,
+    # without exposing user IDs or random UUIDs in the file name.
+    download_dir = os.path.join(
+        current_app.instance_path,
+        'qsar_prediction_downloads',
+        f'user_{current_user.id}'
+    )
 
-            # Handle NaN values that may occur in descriptor calculations
-            # Replace NaN with 0 to avoid RandomForestClassifier rejection
-            if X_predict.isna().any().any():
-                X_predict = X_predict.fillna(0)
+    if not os.path.exists(os.path.join(download_dir, safe_filename)):
+        flask.abort(404)
 
-        try:
-            y_pred = sklearn_model.predict(X_predict)
-        except Exception as e:
-            flash(f"Prediction failed for model '{model_name}': {e}", 'danger')
-            continue
-
-        prediction_df[f'{model_name}_Prediction'] = y_pred
-
-    pred_cols = [c for c in prediction_df.columns if c.endswith('_Prediction')]
-    if not pred_cols:
-        if warn_msg:
-            flash(warn_msg, 'warning')
-        flash("No predictions were generated. Check models/descriptors.", 'danger')
-        return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
-
-    if original_cols_from_upload is None:
-        original_cols_from_upload = [c for c in prediction_df.columns if c in ('SMILES',)]
-
-    original_cols = [c for c in original_cols_from_upload if c in prediction_df.columns and not c.endswith('_Prediction')]
-
-    export_df = prediction_df[original_cols + pred_cols].copy()
-
-    if output_type == 'CSV':
-        for drop_c in ('ROMol', 'compound_id', 'inchi'):
-            if drop_c in export_df.columns:
-                export_df = export_df.drop(columns=[drop_c])
-
-        mem = io.BytesIO()
-        export_df.to_csv(mem, index=False)
-        mem.seek(0)
-        return flask.send_file(
-            mem,
-            as_attachment=True,
-            download_name=f"{base_name}_predicted.csv",
-            mimetype="text/csv"
-        )
-
-    elif output_type == 'SDF':
-        sdf_df = export_df.copy()
-        if 'ROMol' not in sdf_df.columns:
-            sdf_df['ROMol'] = prediction_df['ROMol']
-
-        output_file = os.path.join(current_app.instance_path, f"{base_name}_predicted.sdf")
-        PandasTools.WriteSDF(
-            sdf_df,
-            output_file,
-            properties=[col for col in sdf_df.columns
-                        if col not in EXCLUDED_SDF_PROPS and col not in ('ROMol', 'compound_id', 'inchi')]
-        )
-        return flask.send_file(
-            output_file,
-            as_attachment=True,
-            download_name=os.path.basename(output_file)
-        )
-
-    if warn_msg:
-        flash(warn_msg, 'warning')
-    return render_template('cheminf/QSAR-predict.html', user_qsar_models=user_qsar_models, session_id=session_id)
+    return flask.send_from_directory(
+        download_dir,
+        safe_filename,
+        as_attachment=True,
+        mimetype='text/csv',
+        download_name=safe_filename,
+    )
 
 
 @bp.route('/task-table-partial')

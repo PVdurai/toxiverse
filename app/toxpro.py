@@ -74,11 +74,68 @@ def index():
     return render_template('toxpro/home.html')
 
 
-
 @bp.route('/tutorial', methods=['GET'])
-
 def tutorial():
-    return render_template('toxpro/tutorial.html')
+    return render_template(
+        'toxpro/tutorial.html',
+        current_tutorial_section='home'
+    )
+
+
+@bp.route('/tutorial/introduction', methods=['GET'])
+def tutorial_introduction():
+    return render_template(
+        'tutorial/introduction.html',
+        current_tutorial_section='introduction'
+    )
+
+
+@bp.route('/tutorial/bioprofiler', methods=['GET'])
+def tutorial_bioprofiler():
+    return render_template(
+        'tutorial/bioprofiler.html',
+        current_tutorial_section='bioprofiler'
+    )
+
+
+@bp.route('/tutorial/database', methods=['GET'])
+def tutorial_database():
+    return render_template(
+        'tutorial/database.html',
+        current_tutorial_section='database'
+    )
+
+
+@bp.route('/tutorial/cheminformatics', methods=['GET'])
+def tutorial_cheminformatics():
+    return render_template(
+        'tutorial/cheminformatics.html',
+        current_tutorial_section='cheminformatics'
+    )
+
+
+@bp.route('/tutorial/tasks', methods=['GET'])
+def tutorial_tasks():
+    return render_template(
+        'tutorial/tasks.html',
+        current_tutorial_section='tasks'
+    )
+
+
+@bp.route('/tutorial/about', methods=['GET'])
+def tutorial_about():
+    return render_template(
+        'tutorial/about.html',
+        current_tutorial_section='about'
+    )
+
+
+@bp.route('/tutorial/contact', methods=['GET'])
+def tutorial_contact():
+    return render_template(
+        'tutorial/contact.html',
+        current_tutorial_section='contact'
+    )
 
 @bp.route('/sourceData', methods=['GET'])
 
@@ -198,8 +255,8 @@ def upload_dataset():
                 )
                 return redirect(url_for('toxpro.datasets'))
 
-            if len(mols_df) > 1000:
-                raise ValueError(f"The dataset '{sdfile.filename}' contains more than 1000 entries.")
+            if len(mols_df) > 2000:
+                raise ValueError(f"The dataset '{sdfile.filename}' contains more than 2000 entries.")
 
             # Drop rows with missing key fields
             missing_rows = mols_df[
@@ -260,8 +317,8 @@ def upload_dataset():
                 )
                 return render_template('toxpro/datasets.html', user_datasets=list(current_user.datasets))
 
-            if len(mols_df) > 1000:
-                raise ValueError(f"The dataset '{sdfile.filename}' contains more than 1000 entries.")
+            if len(mols_df) > 2000:
+                raise ValueError(f"The dataset '{sdfile.filename}' contains more than 2000 entries.")
 
             # Drop rows with missing key fields
             missing_rows = mols_df[mols_df[activity_col].isna() | mols_df[compound_id_col].isna()]
@@ -657,7 +714,7 @@ def download_bioprofile():
         return send_file(
             matrix_outfile,
             as_attachment=True,
-            download_name=f"Initial Bioprofile.csv",
+            download_name=f"Initial Bioprofile_vMay19th2026.csv",
             mimetype="text/plain",
         )
 
@@ -670,7 +727,7 @@ def download_bioprofile():
                 heatmap_outfile,
                 mimetype='image/png',
                 as_attachment=True,
-                download_name="Heatmap.png"
+                download_name="Heatmap_vMay19th2026.png"
             )
 
     if do_what == 'Download Model Metrics':
@@ -680,7 +737,7 @@ def download_bioprofile():
             return send_file(
                 metrics_outfile,
                 as_attachment=True,
-                download_name="Model Metrics.csv",
+                download_name="Model Metrics_vMay19th2026.csv",
                 mimetype="text/csv",
             )
 
@@ -702,7 +759,7 @@ def download_bioprofile():
             return send_file(
                 filled_matrix,
                 as_attachment=True,
-                download_name="Complete Bioprofile.csv",
+                download_name="Complete Bioprofile_vMay19th2026.csv",
                 mimetype="text/csv",
             )
 
@@ -714,7 +771,7 @@ def download_database():
 
     # Define columns to drop
     columns_to_exclude = [
-        'index', 'CleanedInChI', 'CID_COL', 'Name', 'SMILES', 'Original-Mol-ID', 'No.', 'Dataset-ID',
+        'index', 'CleanedInChI', 'Clean Energy', 'CID_COL', 'Name', 'SMILES', 'Original-Mol-ID', 'No.', 'Dataset-ID',
         'ID', 'Column0', 'ACTIVITY2', 'Column1', 'CAS #', 'DATABASE_NAME'
     ]
 

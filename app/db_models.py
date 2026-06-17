@@ -190,11 +190,33 @@ class CVResults(db.Model):
     recall = db.Column(db.Float)
     specificity = db.Column(db.Float)
     correct_classification_rate = db.Column(db.Float)
+
+    # Standard deviations across held-out CV folds.
+    accuracy_sd = db.Column(db.Float)
+    f1_score_sd = db.Column(db.Float)
+    area_under_roc_sd = db.Column(db.Float)
+    cohens_kappa_sd = db.Column(db.Float)
+    precision_sd = db.Column(db.Float)
+    recall_sd = db.Column(db.Float)
+    specificity_sd = db.Column(db.Float)
+    correct_classification_rate_sd = db.Column(db.Float)
+
+    # Decision threshold calibrated from out-of-fold probabilities.
+    classification_threshold = db.Column(db.Float)
+
     r2_score = db.Column(db.Float)
     max_error = db.Column(db.Float)
     mean_squared_error = db.Column(db.Float)
     mean_absolute_percentage_error = db.Column(db.Float)
     pinball_score = db.Column(db.Float)
+
+    # Standard deviations across held-out CV folds for regression metrics.
+    r2_score_sd = db.Column(db.Float)
+    max_error_sd = db.Column(db.Float)
+    mean_squared_error_sd = db.Column(db.Float)
+    mean_absolute_percentage_error_sd = db.Column(db.Float)
+    pinball_score_sd = db.Column(db.Float)
+
     qsar_model_id = db.Column(db.Integer, db.ForeignKey('qsar_model.id'))
 
 

@@ -49,25 +49,54 @@ def build_qsar(user_id, dataset_name, descriptors, algorithm, type, job_id=None,
             Dataset.dataset_name == dataset_name,
             Dataset.user_id == user_id
         ).statement
+
         df = pd.read_sql(query_statement, db.session.connection())
 
-        dataset = Dataset.query.filter_by(dataset_name=dataset_name, user_id=user_id).first()
+        dataset = Dataset.query.filter_by(
+            dataset_name=dataset_name,
+            user_id=user_id
+        ).first()
+
+        if dataset is None:
+            raise ValueError(f"Dataset not found: {dataset_name}")
+
+        if df.empty:
+            raise ValueError("No chemicals found in this dataset.")
 
         # Remove existing model/results for same (user, dataset, algo, desc, type)
         qsar_model = QSARModel.query.filter_by(
-            user_id=user_id, algorithm=algorithm, descriptors=descriptors, type=type, dataset_id=dataset.id
+            user_id=user_id,
+            algorithm=algorithm,
+            descriptors=descriptors,
+            type=type,
+            dataset_id=dataset.id
         ).first()
+
         if qsar_model:
             cv_results = CVResults.query.filter_by(qsar_model_id=qsar_model.id).first()
             if cv_results:
                 db.session.delete(cv_results)
             db.session.delete(qsar_model)
+            db.session.commit()
 
-        # Create descriptors
+        # Create descriptors/fingerprints
+        # If chem_io finds invalid molecules, it should raise a clear ValueError.
         X = chem_io.get_desc(df, descriptors)
+
+        if X is None or X.empty:
+            raise ValueError(
+                "No valid molecular descriptors/fingerprints could be generated. "
+                "Please check the chemical structures in the uploaded dataset."
+            )
+
         y = df['activity']
         y.index = df['compound_id']
         y = y.loc[X.index]
+
+        if y.empty:
+            raise ValueError(
+                "No matching activity labels were found after descriptor generation."
+            )
 
         scale = True if descriptors == 'RDKit' else False
 
@@ -75,10 +104,15 @@ def build_qsar(user_id, dataset_name, descriptors, algorithm, type, job_id=None,
         if job:
             job.meta['progress'] = 'Training Model...'
             job.save_meta()
+
         if type == 'Classification':
-            model, cv_preds, train_stats = ml.build_qsar_model(X, y, algorithm, scale=scale)
+            model, cv_preds, train_stats = ml.build_qsar_model(
+                X, y, algorithm, scale=scale
+            )
         elif type == 'Regression':
-            model, cv_preds, train_stats = ml.build_qsar_model_regression(X, y, algorithm, scale=scale)
+            model, cv_preds, train_stats = ml.build_qsar_model_regression(
+                X, y, algorithm, scale=scale
+            )
         else:
             raise ValueError(f"Unknown model type: {type}")
 
@@ -91,48 +125,71 @@ def build_qsar(user_id, dataset_name, descriptors, algorithm, type, job_id=None,
             dataset_id=dataset.id,
             sklearn_model=model
         )
+
         db.session.add(qsar_model)
         db.session.commit()
 
         cv_results = CVResults(
             qsar_model_id=qsar_model.id,
-            accuracy=train_stats['ACC'],
-            f1_score=train_stats['F1-Score'],
-            area_under_roc=train_stats['AUC'],
-            cohens_kappa=train_stats["Cohen's Kappa"],
-            # matthews_correlation=train_stats['MCC'],
-            precision=train_stats['Precision'],
-            recall=train_stats['Recall'],
-            specificity=train_stats['Specificity'],
-            correct_classification_rate=train_stats['CCR'],
-            r2_score=train_stats['R2-score'],
-            max_error=train_stats['Max-error'],
-            mean_squared_error=train_stats['Mean-squared-error'],
-            mean_absolute_percentage_error=train_stats['Mean-absolute-percentage-error'],
-            pinball_score=train_stats['D2-pinball-score']
+
+            accuracy=train_stats.get('ACC'),
+            f1_score=train_stats.get('F1-Score'),
+            area_under_roc=train_stats.get('AUC'),
+            cohens_kappa=train_stats.get("Cohen's Kappa"),
+            precision=train_stats.get('Precision'),
+            recall=train_stats.get('Recall'),
+            specificity=train_stats.get('Specificity'),
+            correct_classification_rate=train_stats.get('CCR'),
+
+            accuracy_sd=train_stats.get('ACC_SD'),
+            f1_score_sd=train_stats.get('F1-Score_SD'),
+            area_under_roc_sd=train_stats.get('AUC_SD'),
+            cohens_kappa_sd=train_stats.get("Cohen's Kappa_SD"),
+            precision_sd=train_stats.get('Precision_SD'),
+            recall_sd=train_stats.get('Recall_SD'),
+            specificity_sd=train_stats.get('Specificity_SD'),
+            correct_classification_rate_sd=train_stats.get('CCR_SD'),
+
+            classification_threshold=train_stats.get('Threshold'),
+
+            r2_score=train_stats.get('R2-score'),
+            max_error=train_stats.get('Max-error'),
+            mean_squared_error=train_stats.get('Mean-squared-error'),
+            mean_absolute_percentage_error=train_stats.get('Mean-absolute-percentage-error'),
+            pinball_score=train_stats.get('D2-pinball-score'),
+
+            r2_score_sd=train_stats.get('R2-score_SD'),
+            max_error_sd=train_stats.get('Max-error_SD'),
+            mean_squared_error_sd=train_stats.get('Mean-squared-error_SD'),
+            mean_absolute_percentage_error_sd=train_stats.get('Mean-absolute-percentage-error_SD'),
+            pinball_score_sd=train_stats.get('D2-pinball-score_SD')
         )
+
         db.session.add(cv_results)
         db.session.commit()
 
-        # Mark task complete (and COMMIT) - only if running in RQ context
+        # Mark task complete
         if job:
             job.meta['progress'] = 'Complete'
             job.save_meta()
+
             task = Task.query.get(job.get_id())
-            task.complete = True
-            task.time_completed = datetime.datetime.now(timezone.utc)
-            db.session.commit()
+            if task:
+                task.complete = True
+                task.time_completed = datetime.datetime.now(timezone.utc)
+                db.session.commit()
 
         # Update Job status if job_id is provided
         if job_id:
             job_record = Job.query.filter_by(job_id=job_id).first()
             if job_record and job_record.job_type == 'qsar_build':
-                # Check if all tasks for this QSAR job are complete
-                all_tasks = Task.query.filter_by(user_id=user_id, complete=False).filter(
+                all_tasks = Task.query.filter_by(
+                    user_id=user_id,
+                    complete=False
+                ).filter(
                     Task.name == 'build_qsar'
                 ).count()
 
-                # If no incomplete build_qsar tasks remain, mark job as finished
                 if all_tasks == 0:
                     job_record.status = 'finished'
                     job_record.updated_at = datetime.datetime.now(timezone.utc)
@@ -140,14 +197,29 @@ def build_qsar(user_id, dataset_name, descriptors, algorithm, type, job_id=None,
                     logger.info(f"QSAR Job {job_id} marked as finished")
 
     except Exception as e:
-        logger.error(f"QSAR build_qsar task failed: {str(e)}", exc_info=True)
-        # Mark job as failed if job_id provided
+        db.session.rollback()
+
+        error_message = str(e)
+
+        # Keep the error readable in the website/job progress.
+        clean_error = error_message.replace("\n", " ")
+        if len(clean_error) > 800:
+            clean_error = clean_error[:800] + "..."
+
+        if job:
+            job.meta['progress'] = f'Failed: {clean_error}'
+            job.save_meta()
+
+        logger.error(f"QSAR build_qsar task failed: {error_message}", exc_info=True)
+
+        # Mark Job as failed if job_id provided
         if job_id:
             job_record = Job.query.filter_by(job_id=job_id).first()
             if job_record:
                 job_record.status = 'failed'
                 job_record.updated_at = datetime.datetime.now(timezone.utc)
                 db.session.commit()
+
         raise
 
 

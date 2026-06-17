@@ -1,55 +1,462 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- Hero -->
-<section class="hero">
-  <div class="container">
-    <div class="tv-card p-4 p-md-5">
-      <div class="section-title mb-3">
-        <span class="dot"></span> Tutorial
-      </div>
-      <p class="mb-0 subtle">
-        The document provides detailed, step-by-step guidance for using ToxiVerse. You can read it below,
-        or use the buttons to download or open it in a new tab.
-      </p>
+<style>
+  html { scroll-behavior: smooth; }
+  .tutorial-page {
+    --tutorial-primary: #1f6f8b;
+    --tutorial-accent: #5BC0BE;
+    --tutorial-muted: #667085;
+    --tutorial-border: #e6eef3;
+    --tutorial-soft: #f5fbfc;
+    font-size: 16px;
+  }
+  .tutorial-hero {
+    background: linear-gradient(135deg, rgba(91, 192, 190, 0.16), rgba(91, 127, 255, 0.10));
+    border-bottom: 1px solid var(--tutorial-border);
+  }
+  .tutorial-card {
+    background: #fff;
+    border: 1px solid var(--tutorial-border);
+    border-radius: 18px;
+    box-shadow: 0 12px 35px rgba(16, 24, 40, 0.06);
+  }
+  .tutorial-layout {
+    display: grid;
+    grid-template-columns: 285px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+  .tutorial-sidebar {
+    position: sticky;
+    top: 18px;
+    max-height: calc(100vh - 36px);
+    overflow-y: auto;
+  }
+  .tutorial-sidebar a {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: #234;
+    text-decoration: none;
+    line-height: 1.25;
+  }
+  .tutorial-sidebar a:hover,
+  .tutorial-sidebar a:focus {
+    background: var(--tutorial-soft);
+    color: var(--tutorial-primary);
+    text-decoration: none;
+  }
+  .tutorial-sidebar .sub-link {
+    margin-left: 14px;
+    font-size: 0.92rem;
+    color: var(--tutorial-muted);
+  }
+  .tutorial-section {
+    scroll-margin-top: 90px;
+    margin-bottom: 28px;
+  }
+  .tutorial-section h2 {
+    color: #17324d;
+    font-weight: 700;
+  }
+  .tutorial-section h3 {
+    color: var(--tutorial-primary);
+    font-weight: 700;
+  }
+  .tutorial-section p,
+  .tutorial-section li {
+    color: #2f3b45;
+    line-height: 1.72;
+  }
+  .tutorial-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--tutorial-primary);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+  }
+  .tutorial-eyebrow::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: linear-gradient(135deg, var(--tutorial-accent), #5B7FFF);
+    display: inline-block;
+  }
+  .tutorial-note {
+    background: var(--tutorial-soft);
+    border-left: 4px solid var(--tutorial-accent);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #2f3b45;
+  }
+  .tutorial-figure {
+    margin: 22px 0 4px;
+    background: #fff;
+    border: 1px solid var(--tutorial-border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .tutorial-figure img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 10px;
+  }
+  .tutorial-figure figcaption {
+    margin-top: 10px;
+    color: var(--tutorial-muted);
+    font-size: 0.94rem;
+  }
+  .tutorial-pill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-left: 0;
+    list-style: none;
+  }
+  .tutorial-pill-list li {
+    background: #eef8f8;
+    color: #174a55;
+    border: 1px solid #d7eeee;
+    border-radius: 999px;
+    padding: 7px 12px;
+    line-height: 1.2;
+  }
+  .tutorial-sample {
+    background: #0b1220;
+    color: #e6edf6;
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+  }
+  .tutorial-sample code {
+    color: inherit;
+  }
+  @media (max-width: 991px) {
+    .tutorial-layout { grid-template-columns: 1fr; }
+    .tutorial-sidebar { position: static; max-height: none; }
+  }
+</style>
 
-      <div class="mt-3 d-flex flex-wrap">
-        <a class="btn btn-cta btn-equal mr-2"
-           href="{{ url_for('static', filename='Tutorial.pdf') }}"
-           download>
-          Download PDF
-        </a>
-        <a class="btn btn-ghost btn-equal"
-           href="{{ url_for('static', filename='Tutorial.pdf') }}"
-           target="_blank" rel="noopener">
-          Open in new tab
-        </a>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- PDF Viewer -->
-<section class="py-5">
-  <div class="container">
-    <div class="tv-card p-0">
-      <!-- Keep height flexible; 75vh feels good on most screens -->
-      <div class="p-2 p-md-3">
-        <div style="height:75vh; width:100%; overflow:hidden; border-radius:12px;">
-          <iframe
-            src="{{ url_for('static', filename='Tutorial.pdf') }}"
-            title="ToxiVerse Tutorial PDF"
-            style="border:0; width:100%; height:100%;"
-          ></iframe>
+<div class="tutorial-page">
+  <section class="tutorial-hero py-5">
+    <div class="container">
+      <div class="tutorial-card p-4 p-md-5">
+        <div class="row align-items-center">
+          <div class="col-lg-7">
+            <div class="tutorial-eyebrow mb-3">Tutorial</div>
+            <h1 class="mb-3">ToxiVerse tutorial</h1>
+            <p class="lead mb-0">
+              This page provides a step-by-step process for using all three modules of ToxiVerse. <strong>Please scroll below for the contents.</strong>
+            </p>
+          </div>
+          <div class="col-lg-5 mt-4 mt-lg-0">
+            <figure class="tutorial-figure mb-0">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_01_cover.png') }}" alt="ToxiVerse tutorial cover" loading="lazy">
+              <figcaption>ToxiVerse modules.</figcaption>
+            </figure>
+          </div>
         </div>
-        <noscript>
-          <p class="mt-3">
-            JavaScript is disabled. You can <a class="pi-alink-color" href="{{ url_for('static', filename='Tutorial.pdf') }}">download the tutorial here</a>.
-          </p>
-        </noscript>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+
+  <section class="py-5">
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="tutorial-card tutorial-sidebar p-3" aria-label="Tutorial navigation">
+          <strong class="d-block mb-2">Contents</strong>
+          <a href="#introduction">Introduction</a>
+          <a href="#bioprofiler">Bioprofiler</a>
+          <a href="#database">Database</a>
+          <a class="sub-link" href="#toxicity-datasets">Toxicity Datasets</a>
+          <a class="sub-link" href="#resources">Resources</a>
+          <a href="#cheminformatics">Cheminformatics</a>
+          <a class="sub-link" href="#upload-retrieve-dataset">Upload or Retrieve dataset</a>
+          <a class="sub-link" href="#curator">Curator</a>
+          <a class="sub-link" href="#chemical-space-visualization">Chemical Space Visualization</a>
+          <a class="sub-link" href="#qsar-builder">QSAR Builder</a>
+          <a class="sub-link" href="#qsar-predictor">QSAR Predictor</a>
+          <a href="#tasks">Tasks</a>
+          <a href="#contact-us">Contact us</a>
+          <a href="#about-us">About us</a>
+        </aside>
+
+        <main class="tutorial-content">
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="introduction">
+            <div class="tutorial-eyebrow mb-3">Introduction</div>
+            <h2>Introduction</h2>
+            <p>
+              Computational toxicology plays a significant role in identifying hazardous compounds to protect human health and the environment in a cost-effective manner. A major challenge in this field is the lack of publicly available and user-friendly computational tools that can be used for chemical risk assessment with a user-provided dataset, especially by users with limited computational expertise.
+            </p>
+            <p>
+              To address this need, we developed Toxicology Universe (ToxiVerse), a web portal designed to assist toxicologists, pharmaceutical researchers, and chemists in assessing chemical safety. Please check the figure below for the available options.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_02_intro_modules.png') }}" alt="The main modules and sub-options available in ToxiVerse" loading="lazy">
+              <figcaption>The options in ToxiVerse. They are explained in detail with the step-by-step tutorial below.</figcaption>
+            </figure>
+            <p>ToxiVerse offers the following modules:</p>
+            <ul>
+              <li><strong>Bioprofiler:</strong> Provides chemical descriptors by profiling PubChem bioactivity results for chemicals of interest, once experimental data gaps are filled using machine-learning models built from key assays.</li>
+              <li><strong>Database:</strong> Download and visualize curated toxicological datasets. The integrated database includes over 50,000 chemicals across 50 endpoints, mostly related to toxicity, compiled from various sources.</li>
+              <li><strong>Cheminformatics:</strong> Create QSAR models using either user-uploaded datasets or datasets retrieved from PubChem by providing an Assay ID. A variety of molecular descriptors and machine learning algorithms are supported. Predict toxicity for new chemicals using the models developed. Options for chemical curation and space visualization are also provided.</li>
+            </ul>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_03_intro_options.png') }}" alt="Available options under Database and Cheminformatics modules" loading="lazy">
+              <figcaption>The three main modules, plus the available options under the Database and Cheminformatics modules.</figcaption>
+            </figure>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="bioprofiler">
+            <div class="tutorial-eyebrow mb-3">Bioprofiler</div>
+            <h2>Bioprofiler</h2>
+            <p>
+              Users can upload up to 500 chemicals to profile them using PubChem bioactivity data. Bioprofiler provides chemical descriptors by profiling PubChem bioactivity results for chemicals of interest, once experimental data gaps are filled using machine-learning models built from all 35 key assays if they have at least 100 active and inactive chemicals.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_04_bioprofiler_upload.png') }}" alt="Bioprofiler upload screen with PubChem Compound ID sample file" loading="lazy">
+              <figcaption>Upload a file with PubChem Compound IDs, for example <code>Bioprofile_sample_dataset.txt</code>, and click the start button.</figcaption>
+            </figure>
+            <p>A sample file for Bioprofiler contains one PubChem CID per line:</p>
+            <pre class="tutorial-sample"><code>4091
+2548
+5417
+1254
+1493
+1981
+14403
+2141
+3061
+6049
+3467</code></pre>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_05_bioprofiler_results.png') }}" alt="Bioprofiler results available to download" loading="lazy">
+              <figcaption>Bioprofiler results available to download.</figcaption>
+            </figure>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_06_initial_bioprofile.png') }}" alt="Initial Bioprofile matrix with assays as columns and chemicals as rows" loading="lazy">
+              <figcaption>Initial Bioprofile exports the bioprofile matrix with chemicals as rows and bioassays as columns. Activity values are encoded as 1 for Active or Probe, -1 for Inactive, and 0 for Inconclusive, Unspecified, or empty.</figcaption>
+            </figure>
+            <p>
+              The values of inconclusive data, shown as 0s in the Initial Bioprofile, are replaced with either 1 or -1 in the Complete Bioprofile.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_07_heatmap.png') }}" alt="Clustered heatmap of the bioprofile matrix" loading="lazy">
+              <figcaption> Heatmap: a clustered heatmap of the bioprofile matrix to spot activity patterns across assays and chemicals. It supports up to 2000 assay columns.</figcaption>
+            </figure>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_08_model_metrics.png') }}" alt="Model metrics table for Random Forest models" loading="lazy">
+              <figcaption> Model Metrics: detailed performance statistics including accuracy, precision, recall, F1-score, and ROC AUC for Random Forest models on top informative assays.</figcaption>
+            </figure>
+            <p>
+              The top assays were selected through Mutual Information (MI) score. MI measures how informative assay outcomes are about the overall activity of chemicals. First, the bioactivity data collected from PubChem assays for target chemicals were transformed into a chemical-bioactivity matrix, the Initial Bioprofile, where active values were encoded as 1 and inactive or inconclusive values were encoded as 0. Next, each chemical was assigned a binary overall activity label, defined as active if it was active in at least one assay. Finally, the MI between the activity outcome of each assay and the overall activity label was calculated.
+            </p>
+            <p>
+              An assay achieves a high MI score when both its actives and inactives closely match the overall activity labels of as many chemicals as possible. The more consistently an assay distinguishes overall active from inactive chemicals, the higher its MI is. From each assay, a maximum of 500 active and 500 inactive chemicals were collected to build a QSAR model, with a minimum of 100 chemicals in both classes required for the assay to be selected.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_09_metrics_plot.png') }}" alt="Box plot summarizing Bioprofiler model performance" loading="lazy">
+              <figcaption> Metrics Plot: box plot summarizing model performance for quick comparison.</figcaption>
+            </figure>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_10_complete_bioprofile.png') }}" alt="Complete Bioprofile matrix with imputed bioactivity values" loading="lazy">
+              <figcaption>Complete Bioprofile returns the complete bioprofile matrix with missing bioactivity values imputed using trained models.</figcaption>
+            </figure>
+            <p>
+              Some of the Complete Bioprofile values are replaced with either 1 or -1 if they were earlier 0s in the Initial Bioprofile.
+            </p>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="database">
+            <div class="tutorial-eyebrow mb-3">Database</div>
+            <h2>Database</h2>
+            <div id="toxicity-datasets" class="tutorial-section mb-0">
+              <h3>Toxicity Datasets</h3>
+              <p>
+                The Toxicity Datasets option allows users to download and visualize curated toxicological datasets, including chemical space and endpoint distributions, and provides relevant bioassays from PubChem for the selected endpoints. The dataset contains over 50,000 chemical records across 50 endpoints mainly related to toxicity, collected from various sources.
+              </p>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_11_database_toxicity_datasets.png') }}" alt="Toxicity Datasets screen with PCA plot, histogram, relevant bioassays, and CSV export" loading="lazy">
+                <figcaption>Select an endpoint to display the PCA plot, histogram, and relevant bioassays. The selected dataset can also be exported to a CSV file.</figcaption>
+              </figure>
+              <p>
+                Bioassays are ranked by active rate, calculated as Active divided by Active plus Inactive, for the selected endpoint. Assays with Active + Inactive ≥500 are included. To stabilize small-sample assays, Bayesian-adjusted scores are used and up to the top 500 assays per endpoint are retained. Inconclusive results are shown but excluded from calculations.
+              </p>
+            </div>
+            <div id="resources" class="tutorial-section mb-0">
+              <h3>Resources</h3>
+              <p>
+                The Resources option provides details of the available datasets, including references.
+              </p>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_12_resources_table.png') }}" alt="First rows of the Resources table with hyperlinks" loading="lazy">
+                <figcaption>First rows of the Resources table, including hyperlinks.</figcaption>
+              </figure>
+            </div>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="cheminformatics">
+            <div class="tutorial-eyebrow mb-3">Cheminformatics</div>
+            <h2>Cheminformatics</h2>
+            <p>
+              The Cheminformatics module supports uploading or retrieving datasets, curation, chemical space visualization, QSAR model building, and QSAR prediction.
+            </p>
+            <ul class="tutorial-pill-list" aria-label="Cheminformatics sub-options">
+              <li>Upload or Retrieve dataset</li>
+              <li>Curator</li>
+              <li>Chemical Space Visualization</li>
+              <li>QSAR Builder</li>
+              <li>QSAR Predictor</li>
+            </ul>
+
+            <div class="tutorial-section" id="upload-retrieve-dataset">
+              <h3>Upload or Retrieve dataset</h3>
+              <p>
+                Data can be in Comma-Separated Values (CSV) or Structure Data Format (SDF) format to upload. Sample files are provided. You can upload up to 2000 chemicals or retrieve up to 1000 chemicals. Instead of uploading a dataset, you may also import chemicals with structure-activity information from PubChem by entering the PubChem Assay Identifier (AID).
+              </p>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_13_upload_retrieve_overview.png') }}" alt="Upload or Retrieve dataset overview" loading="lazy">
+                <figcaption>Upload or Retrieve dataset overview.</figcaption>
+              </figure>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_14_upload_dataset_form.png') }}" alt="Upload dataset form with format, file, CID, activity, SMILES, and dataset type fields" loading="lazy">
+                <figcaption>Select a format, upload a file such as <code>sample_dataset.csv</code>, enter the CID, activity, and SMILES column names, choose the dataset type, and click Upload dataset.</figcaption>
+              </figure>
+              <div class="tutorial-note mb-3">
+                Please check the sample files provided. Upload accepts up to 2000 chemicals.
+              </div>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_15_upload_dataset_sample.png') }}" alt="Sample file for Upload Dataset" loading="lazy">
+                <figcaption>A sample file for Upload Dataset.</figcaption>
+              </figure>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_16_uploaded_dataset_actions.png') }}" alt="Uploaded dataset display with download and remove actions" loading="lazy">
+                <figcaption>Uploaded files are displayed with options to download or remove the selected dataset.</figcaption>
+              </figure>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_17_retrieve_pubchem_aid.png') }}" alt="Retrieve dataset from PubChem by entering an AID" loading="lazy">
+                <figcaption>Enter an AID and click to retrieve the dataset from PubChem data stored in the local database. The option retrieves up to 1000 random chemicals, including 500 actives and 500 inactives.</figcaption>
+              </figure>
+            </div>
+
+            <div class="tutorial-section" id="curator">
+              <h3>Curator</h3>
+              <p>
+                Curator cleans chemical structures and prepares them for next steps such as model generation by the following steps:
+              </p>
+              <ul>
+                <li>Check and clean chemical structures.</li>
+                <li>Standardize chemical structure representation, such as updating valencies and removing charges.</li>
+                <li>Strip salts and solvents, and remove mixtures by retaining the parent non-salt/non-solvent component.</li>
+                <li>Merge or remove duplicated structures.</li>
+              </ul>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_18_curator.png') }}" alt="Curator screen showing dataset selection and curation options" loading="lazy">
+                <figcaption>Select your dataset and options, then click to run curation. If Create new dataset is chosen instead of Replace dataset, a file named <code>sample_classification_curated</code> will be generated.</figcaption>
+              </figure>
+            </div>
+
+            <div class="tutorial-section" id="chemical-space-visualization">
+              <h3>Chemical Space Visualization</h3>
+              <p>
+                Principal Component Analysis (PCA) is a dimension reduction technique used for visualizing chemical space.
+              </p>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_19_chemical_space_pca.png') }}" alt="Chemical Space Visualization screen showing dataset selection and PCA plot generation" loading="lazy">
+                <figcaption>Select your dataset and click to generate a PCA plot. The PCA figure is then generated.</figcaption>
+              </figure>
+            </div>
+
+            <div class="tutorial-section" id="qsar-builder">
+              <h3>QSAR Builder</h3>
+              <p>
+                QSAR Builder creates QSAR models using a variety of descriptors and algorithms with either a user-uploaded dataset or a dataset obtained by providing a PubChem Assay ID.
+              </p>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_20_qsar_builder_overview.png') }}" alt="QSAR Builder overview" loading="lazy">
+                <figcaption>QSAR Builder overview.</figcaption>
+              </figure>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_21_qsar_builder_steps.png') }}" alt="QSAR Builder steps showing dataset, features, algorithms, activity type, and model metrics" loading="lazy">
+                <figcaption>Choose your dataset, choose features, algorithms, and activity type, click to generate model or models, then check the evaluation metrics and access the generated models.</figcaption>
+              </figure>
+              <figure class="tutorial-figure">
+                <img src="{{ url_for('static', filename='tutorial/tutorial_fig_22_qsar_builder_metrics.png') }}" alt="QSAR Builder dataset selections and performance metrics" loading="lazy">
+                <figcaption>Dataset selection, multiple QSAR model generation options, and performance metrics of classification models.</figcaption>
+              </figure>
+              <p>
+                If all fingerprints and algorithms are selected, the performance metrics are shown as a line plot as above. The Classification metrics figure option is used to download the plot, and a CSV format of those scores can be obtained from the Classification metrics file.
+              </p>
+            </div>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="tasks">
+            <div class="tutorial-eyebrow mb-3">Tasks</div>
+            <h2>Tasks</h2>
+            <p>
+              You can monitor the status, including live updates, of Cheminformatics module jobs here.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_23_tasks.png') }}" alt="Tasks page for monitoring Cheminformatics jobs" loading="lazy">
+              <figcaption>Tasks page for monitoring Cheminformatics module jobs.</figcaption>
+            </figure>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="qsar-predictor">
+            <div class="tutorial-eyebrow mb-3">Cheminformatics</div>
+            <h2>QSAR Predictor</h2>
+            <p>
+              QSAR Predictor predicts toxicity for new chemicals using models developed in the QSAR Builder option.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_24_qsar_predictor_overview.png') }}" alt="QSAR Predictor overview" loading="lazy">
+              <figcaption>QSAR Predictor overview.</figcaption>
+            </figure>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_25_qsar_predictor_inputs.png') }}" alt="QSAR Predictor model selection and input options" loading="lazy">
+              <figcaption>Select your QSAR model, select input and output formats, then either choose a file such as <code>Prediction_dataset.csv</code> and enter the SMILES column name, or paste SMILES and click Predict.</figcaption>
+            </figure>
+            <div class="tutorial-note mb-3">
+              The Predictor accepts up to 100 chemicals. Sample files can be downloaded. Multiple QSAR models can also be selected.
+            </div>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_26_qsar_predictor_results.png') }}" alt="QSAR Predictor results with Prediction column added to the model name" loading="lazy">
+              <figcaption>Prediction results are returned with <code>_Prediction</code> added to the model name. The output includes prediction scores for the chemicals.</figcaption>
+            </figure>
+            <p>
+              An output file such as <code>Prediction_dataset_predicted.csv</code> is downloaded with a new prediction column, for example <code>sample_dataset_Binary-ECFP6-RF-Classification_Prediction</code>, containing predicted scores for the chemicals.
+            </p>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="contact-us">
+            <div class="tutorial-eyebrow mb-3">Contact us</div>
+            <h2>Contact us</h2>
+            <p><strong>Rowan University:</strong> 201 Mullica Hill Rd, Robinson Hall, Glassboro, NJ 08028</p>
+            <p><strong>Tulane University:</strong> Hutchinson Memorial Building, School of Medicine, 1415 Tulane Ave, New Orleans, LA 70112</p>
+            <p>Questions, comments, and general inquiries can be emailed to <a href="mailto:toxiverse.help@gmail.com">toxiverse.help@gmail.com</a>.</p>
+          </section>
+
+          <section class="tutorial-card tutorial-section p-4 p-md-5" id="about-us">
+            <div class="tutorial-eyebrow mb-3">About us</div>
+            <h2>About us</h2>
+            <p>
+              The Zhu Lab uses cheminformatics algorithms, workflows, and other computational tools to model chemical toxicity, ADME (Absorption, Distribution, Metabolism, and Excretion), and other biological activities. These models support regulatory chemical toxicity assessments and the computer-aided drug discovery (CADD) process.
+            </p>
+            <figure class="tutorial-figure">
+              <img src="{{ url_for('static', filename='tutorial/tutorial_fig_27_contact_about.png') }}" alt="Zhu Lab and Tulane University School of Medicine logos" loading="lazy">
+              <figcaption>Zhu Lab and Tulane University School of Medicine.</figcaption>
+            </figure>
+          </section>
+        </main>
+      </div>
+    </div>
+  </section>
+</div>
 
 {% endblock %}
